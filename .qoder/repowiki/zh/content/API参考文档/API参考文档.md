@@ -17,6 +17,13 @@
 - [README.md](file://README.md)
 </cite>
 
+## 更新摘要
+**变更内容**
+- 更新了进度监控端点的实时状态更新机制，新增SSE流式输出支持
+- 增强了验证结果端点，支持警告级别和错误级别的验证问题分类
+- 完善了转换过程的详细阶段信息，包括章节进度跟踪
+- 新增了流式输出显示功能，提供更好的用户体验
+
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -31,7 +38,7 @@
 
 ## 简介
 
-这是一个基于FastAPI构建的小说到剧本转换API，能够将小说文本自动转换为结构化的YAML剧本格式。该系统提供了完整的文件上传、转换启动、进度查询、结果下载和验证功能，并支持实时进度推送。
+这是一个基于FastAPI构建的小说到剧本转换API，能够将小说文本自动转换为结构化的YAML剧本格式。该系统提供了完整的文件上传、转换启动、进度查询、结果下载和验证功能，并支持实时进度推送和详细的转换过程监控。
 
 主要特性包括：
 - 多格式文件支持（TXT、MD、DOCX、PDF）
@@ -39,6 +46,7 @@
 - 基于LLM的逐章转换
 - 实时进度监控（SSE）
 - 结构化YAML输出和验证
+- 流式输出显示和详细阶段信息
 
 ## 项目结构
 
@@ -89,15 +97,15 @@ A --> J
 ### 数据模型
 系统使用Pydantic模型确保API请求和响应的数据完整性：
 - UploadResponse：文件上传后的响应
-- ConversionStatus：转换状态模型
-- ValidationIssue：验证问题模型
+- ConversionStatus：转换状态模型，包含详细阶段信息
+- ValidationIssue：验证问题模型，支持警告和错误级别
 - ConvertRequest：转换请求体
 
 ### 业务服务
 - 文件解析服务：支持多种文件格式的文本提取
 - 章节分割服务：智能章节检测和分割
-- 转换引擎：基于LLM的逐章转换
-- 验证服务：结构化验证
+- 转换引擎：基于LLM的逐章转换，支持流式输出
+- 验证服务：结构化验证，支持详细的问题分类
 
 **章节来源**
 - [app/api/routes.py:68-206](file://app/api/routes.py#L68-L206)
@@ -122,14 +130,16 @@ Client->>API : POST /api/convert/{job_id}
 API->>Converter : 启动转换任务
 Converter->>Splitter : 分割章节
 Splitter-->>Converter : 章节列表
-Converter->>Converter : 逐章转换
+Converter->>Converter : 逐章转换流式输出
 Converter->>Validator : 验证结果
 Validator-->>Converter : 验证报告
 Converter-->>API : YAML内容
 Client->>API : GET /api/status/{job_id}
-API-->>Client : SSE实时进度
+API-->>Client : SSE实时进度和流式输出
 Client->>API : GET /api/result/{job_id}
 API-->>Client : YAML文件下载
+Client->>API : GET /api/validate/{job_id}
+API-->>Client : 验证问题含警告和错误
 ```
 
 **图表来源**
@@ -258,6 +268,12 @@ const response = await fetch(`/api/convert/${jobId}`, {
 - **URL模式**: `/api/status/{job_id}/json`
 - **响应格式**: JSON对象
 
+#### SSE事件类型
+系统支持三种SSE事件：
+- **status事件**：发送实时进度状态
+- **chunk事件**：发送LLM流式输出片段
+- **done事件**：转换完成通知
+
 #### 进度状态模型
 ```mermaid
 classDiagram
@@ -295,18 +311,23 @@ participant Client as 客户端
 participant SSE as SSE服务器
 participant JobStore as 作业存储
 Client->>SSE : 建立SSE连接
-loop 每秒轮询
+loop 每0.5秒轮询
 SSE->>JobStore : 获取作业状态
 JobStore-->>SSE : 返回状态数据
-SSE-->>Client : 发送事件数据
+SSE-->>Client : 发送status事件
+alt 有新的流式输出
+SSE->>JobStore : 获取流缓冲区
+JobStore-->>SSE : 返回新片段
+SSE-->>Client : 发送chunk事件
+end
 alt 转换完成或出错
-SSE->>Client : 关闭连接
+SSE->>Client : 发送done事件并关闭连接
 end
 end
 ```
 
 **图表来源**
-- [app/api/routes.py:131-158](file://app/api/routes.py#L131-L158)
+- [app/api/routes.py:151-200](file://app/api/routes.py#L151-L200)
 
 #### 前端SSE使用示例
 ```javascript
@@ -316,11 +337,19 @@ eventSource.onmessage = function(event) {
     const status = JSON.parse(event.data);
     updateProgress(status);
 };
+
+// 监听流式输出事件
+eventSource.addEventListener('chunk', function(event) {
+    const data = JSON.parse(event.data);
+    if (data.text) {
+        appendToStream(data.text);
+    }
+});
 ```
 
 **章节来源**
-- [app/api/routes.py:131-158](file://app/api/routes.py#L131-L158)
-- [app/static/js/conversion.js:30-71](file://app/static/js/conversion.js#L30-L71)
+- [app/api/routes.py:151-200](file://app/api/routes.py#L151-L200)
+- [app/static/js/conversion.js:50-93](file://app/static/js/conversion.js#L50-L93)
 
 ### 结果下载端点
 
@@ -351,7 +380,7 @@ ReturnFile --> End
 ```
 
 **图表来源**
-- [app/api/routes.py:168-198](file://app/api/routes.py#L168-L198)
+- [app/api/routes.py:210-241](file://app/api/routes.py#L210-L241)
 
 #### 响应示例
 ```json
@@ -362,7 +391,7 @@ ReturnFile --> End
 ```
 
 **章节来源**
-- [app/api/routes.py:168-198](file://app/api/routes.py#L168-L198)
+- [app/api/routes.py:210-241](file://app/api/routes.py#L210-L241)
 
 ### 验证端点
 
@@ -397,6 +426,11 @@ ValidationIssue --> Severity : "使用"
 **图表来源**
 - [app/models/requests.py:24-29](file://app/models/requests.py#L24-L29)
 
+#### 验证问题分类
+系统支持两种验证问题级别：
+- **warning（警告）**：不影响转换完成的可修复问题
+- **error（错误）**：阻止转换完成的严重问题
+
 #### 响应示例
 ```json
 {
@@ -404,14 +438,19 @@ ValidationIssue --> Severity : "使用"
     {
       "severity": "warning",
       "path": "structure.acts[0].scenes[2].elements[0].character_id",
-      "message": "Character 'john-doe' not found in character catalog"
+      "message": "角色 'john-doe' 未在角色目录中找到"
+    },
+    {
+      "severity": "error",
+      "path": "structure.acts",
+      "message": "Screenplay必须至少有一个幕"
     }
   ]
 }
 ```
 
 **章节来源**
-- [app/api/routes.py:201-205](file://app/api/routes.py#L201-L205)
+- [app/api/routes.py:243-247](file://app/api/routes.py#L243-L247)
 - [app/services/validator.py:11-111](file://app/services/validator.py#L11-L111)
 
 ## 依赖分析
@@ -464,16 +503,19 @@ Routes --> Screenplay
 - 使用异步I/O避免阻塞
 - 作业状态存储在内存字典中
 - 文件内容按需读取和处理
+- 流式输出缓冲区管理
 
 ### LLM调用优化
 - 章节长度限制（约12000字符）
 - Token预算分配策略
 - 连续性上下文传递减少重复
+- 实时进度估算基于流式块计数
 
 ### 并发处理
 - 后台任务队列处理转换
 - SSE连接非阻塞
 - 文件上传流式处理
+- 实时输出流式渲染
 
 ## 故障排除指南
 
@@ -488,6 +530,7 @@ Routes --> Screenplay
 2. 验证DeepSeek API密钥有效性
 3. 确认文件大小不超过限制
 4. 查看服务器日志获取详细错误信息
+5. 检查SSE连接是否正常建立
 
 **章节来源**
 - [app/api/routes.py:74-77](file://app/api/routes.py#L74-L77)
@@ -499,15 +542,16 @@ Routes --> Screenplay
 
 **优势**：
 - 完整的文件格式支持
-- 实时进度监控
+- 实时进度监控和流式输出
 - 结构化YAML输出
-- 自动验证机制
+- 详细的验证机制（支持警告和错误级别）
 - 易于扩展的架构
 
 **适用场景**：
 - 文学作品改编
 - 剧本创作辅助
 - 内容格式转换
+- 实时进度展示
 
 ## 附录
 
@@ -528,16 +572,28 @@ const convertResp = await fetch(`/api/convert/${job_id}`, {
     body: JSON.stringify({ api_key: deepseekKey })
 });
 
-// 3. 监控进度
+// 3. 监控进度（SSE）
 const eventSource = new EventSource(`/api/status/${job_id}`);
-eventSource.onmessage = function(event) {
+eventSource.addEventListener('status', (event) => {
     const status = JSON.parse(event.data);
     console.log(`进度: ${status.progress_percent}% (${status.stage})`);
-};
+});
+
+eventSource.addEventListener('chunk', (event) => {
+    const data = JSON.parse(event.data);
+    if (data.text) {
+        appendToStream(data.text);
+    }
+});
 
 // 4. 下载结果
 const resultResp = await fetch(`/api/result/${job_id}`);
 const yamlContent = await resultResp.text();
+
+// 5. 检查验证结果
+const validateResp = await fetch(`/api/validate/${job_id}`);
+const validationData = await validateResp.json();
+console.log(`验证结果: ${validationData.issues.length} 个问题`);
 ```
 
 ### 最佳实践
@@ -545,8 +601,9 @@ const yamlContent = await resultResp.text();
 1. **文件大小控制**: 确保文件大小不超过配置限制
 2. **错误处理**: 实现适当的错误处理和重试机制
 3. **进度监控**: 使用SSE实现实时进度反馈
-4. **验证检查**: 在下载前检查验证结果
-5. **资源清理**: 转换完成后清理临时文件
+4. **验证检查**: 在下载前检查验证结果，区分警告和错误
+5. **流式输出**: 利用实时输出功能提升用户体验
+6. **资源清理**: 转换完成后清理临时文件
 
 ### API版本控制
 
