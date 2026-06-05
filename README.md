@@ -172,6 +172,63 @@ ruff check app/ tests/ --fix
 | `MAX_UPLOAD_SIZE_MB` | `50` | 最大上传文件大小 (MB) |
 | `DATA_DIR` | `./data` | 运行时数据目录 |
 
+## 部署
+
+### Render.com 一键部署（推荐）
+
+项目已内置 [render.yaml](render.yaml) 和 [Dockerfile](Dockerfile)，支持 Render.com 一键部署。
+
+#### 步骤
+
+1. **推送代码到 GitHub**
+
+   ```bash
+   git add render.yaml Dockerfile .dockerignore
+   git commit -m "chore: add Render.com deployment config"
+   git push
+   ```
+
+2. **在 Render.com 创建服务**
+
+   - 注册/登录 [Render.com](https://render.com)
+   - 点击 Dashboard → **New +** → **Web Service**
+   - 关联你的 GitHub 仓库，Render 会自动检测到 `render.yaml` 中的配置
+
+3. **配置环境变量**
+
+   部署前需在 Render Dashboard 的 **Environment** 中填入：
+
+   | 变量名 | 值 | 说明 |
+   |--------|------|------|
+   | `DEEPSEEK_API_KEY` | `sk-your-key-here` | **必填**，DeepSeek API 密钥 |
+   | `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | 已默认配置，可按需修改 |
+   | `DEEPSEEK_MODEL` | `deepseek-chat` | 已默认配置，可按需修改 |
+   | `MAX_UPLOAD_SIZE_MB` | `50` | 已默认配置 |
+   | `DATA_DIR` | `/data` | 已默认配置，Docker 容器内路径 |
+
+4. **部署并访问**
+
+   - 点击 **Create Web Service**，等待构建完成（约 3–5 分钟）
+   - 部署成功后，访问 `https://novel-to-screenplay.onrender.com`（具体域名见 Dashboard）
+
+> **注意**：Render 免费版服务会在 15 分钟无请求后自动休眠，首次访问时可能有 30–60 秒冷启动延迟。
+
+### 手动部署（云服务器）
+
+```bash
+# 构建 Docker 镜像
+docker build -t novel-to-screenplay .
+
+# 运行容器
+docker run -d \
+  -p 8000:8000 \
+  -e DEEPSEEK_API_KEY=sk-your-key-here \
+  -e DATA_DIR=/data \
+  -v $(pwd)/data:/data \
+  --name novel-to-screenplay \
+  novel-to-screenplay
+```
+
 ## License
 
 MIT
