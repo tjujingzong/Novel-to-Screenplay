@@ -19,7 +19,7 @@
             renderSamples();
         } catch (err) {
             samplesContainer.innerHTML = `
-                <p class="text-center py-8 text-red-500">Failed to load samples: ${err.message}</p>
+                <p class="text-center py-8 text-red-500">加载样例失败：${err.message}</p>
             `;
         }
     }
@@ -27,7 +27,7 @@
     function renderSamples() {
         if (currentSamples.length === 0) {
             samplesContainer.innerHTML = `
-                <p class="text-center py-8 text-gray-400">No samples available</p>
+                <p class="text-center py-8 text-gray-400">暂无样例</p>
             `;
             return;
         }
@@ -42,11 +42,11 @@
                 <div class="flex gap-2">
                     <button class="flex-1 text-xs bg-blue-600 text-white py-1.5 px-3 rounded hover:bg-blue-700 transition-colors use-sample-btn"
                             data-sample-id="${sample.id}">
-                        Use This
+                        使用
                     </button>
                     <button class="text-xs text-gray-600 py-1.5 px-3 border border-gray-300 rounded hover:bg-gray-50 transition-colors preview-sample-btn"
                             data-sample-id="${sample.id}">
-                        Preview
+                        预览
                     </button>
                 </div>
             </div>
@@ -75,10 +75,10 @@
             if (window.handleSampleFile) {
                 window.handleSampleFile(file);
             } else {
-                alert('Sample loaded: ' + sample.title + '\nPlease use the upload area to proceed.');
+                alert('已加载样例：' + sample.title + '\n请在上传区域继续操作。');
             }
         } catch (err) {
-            alert('Failed to load sample: ' + err.message);
+            alert('加载样例失败：' + err.message);
         }
     }
 
@@ -109,7 +109,7 @@
                 }
             });
         } catch (err) {
-            alert('Failed to preview sample: ' + err.message);
+            alert('预览失败：' + err.message);
         }
     }
 
@@ -122,7 +122,7 @@
             renderHistory(data.history || []);
         } catch (err) {
             historyContainer.innerHTML = `
-                <p class="text-center py-8 text-red-500">Failed to load history: ${err.message}</p>
+                <p class="text-center py-8 text-red-500">加载历史失败：${err.message}</p>
             `;
         }
     }
@@ -130,21 +130,21 @@
     function renderHistory(history) {
         if (history.length === 0) {
             historyContainer.innerHTML = `
-                <p class="text-center py-8 text-gray-400">No conversion history yet</p>
+                <p class="text-center py-8 text-gray-400">暂无转换历史</p>
             `;
             return;
         }
 
         const stageLabels = {
-            'uploaded': 'Uploaded',
-            'parsing': 'Parsing',
-            'splitting': 'Splitting',
-            'extracting_characters': 'Extracting Characters',
-            'converting': 'Converting',
-            'assembling': 'Assembling',
-            'validating': 'Validating',
-            'complete': 'Complete',
-            'error': 'Error',
+            'uploaded': '已上传',
+            'parsing': '解析中',
+            'splitting': '分割中',
+            'extracting_characters': '提取角色',
+            'converting': '转换中',
+            'assembling': '组装中',
+            'validating': '验证中',
+            'complete': '完成',
+            'error': '错误',
         };
 
         const stageColors = {
@@ -175,15 +175,15 @@
                                 ${item.stage === 'complete' ? `
                                     <a href="/preview/${item.job_id}" 
                                        class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                                        View
+                                        查看
                                     </a>
                                     <a href="/api/result/${item.job_id}" 
                                        class="text-xs text-gray-600 hover:text-gray-800 font-medium">
-                                        Download
+                                        下载
                                     </a>
                                 ` : item.stage === 'error' ? `
                                     <span class="text-xs text-red-500" title="${escapeHtml(item.error_message || 'Unknown error')}">
-                                        Error
+                                        错误
                                     </span>
                                 ` : `
                                     <span class="text-xs text-gray-400">

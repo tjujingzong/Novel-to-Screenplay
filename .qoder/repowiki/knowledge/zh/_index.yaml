@@ -2,7 +2,7 @@
 schema_version: 1
 locale: zh-CN
 branch: main
-exported_at: "2026-06-05T04:26:42Z"
+exported_at: "2026-06-05T07:18:03Z"
 modules:
     "":
         dir_name: AI 驱动的小说转剧本自动化系统

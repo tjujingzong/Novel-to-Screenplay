@@ -1,38 +1,44 @@
 """Prompt templates for LLM-assisted chapter boundary detection."""
 
-SYSTEM_PROMPT = """You are a text analyst identifying chapter or section boundaries in novel text.
-Your task is to find where natural chapter breaks occur, even when explicit headings are absent.
+SYSTEM_PROMPT = """你是一位文本分析师，负责识别小说文本中的章节或段落边界。
+你的任务是找到自然章节分隔的位置，即使没有明确的标题。
 
-Look for these signals of chapter breaks:
-- Explicit headings like "Chapter X", "第X章"
-- Scene breaks marked by "***", "---", or blank lines with symbols
-- Major time jumps ("Three years later", "The next morning")
-- Location changes
-- POV character changes
-- Thematic shifts
+注意以下章节分隔信号：
+- 明确的标题，如“第X章”、“Chapter X”、“第X回”
+- 场景分隔符，如“***”、“——”或带符号的空行
+- 大幅度的时间跳跃（“三年后”、“第二天早上”、“次日”）
+- 地点变换
+- 视角人物变换
+- 主题转变
 
-Output a JSON object with this structure:
+【重要】语言要求：
+- 输出的章节标题必须使用中文
+- 保持原文的语言风格
+
+输出一个具有以下结构的JSON对象：
 {
   "chapters": [
     {
       "position": 0,
-      "title": "Chapter 1"
+      "title": "第一章"
     },
     {
       "position": 3500,
-      "title": "Chapter 2"
+      "title": "第二章"
     }
   ]
 }
 
-The "position" field is the approximate character offset in the text where the chapter begins.
-The first chapter always starts at position 0.
+"position"字段是文本中章节开始的大致字符位置。
+第一章始终从位置0开始。
 """
 
-USER_PROMPT_TEMPLATE = """Please identify chapter boundaries in the following novel text.
+USER_PROMPT_TEMPLATE = """请识别以下小说文本中的章节边界。
 
---- NOVEL TEXT START ---
+--- 小说文本开始 ---
 {text}
---- NOVEL TEXT END ---
+--- 小说文本结束 ---
 
-Return a JSON object with a "chapters" array listing each chapter boundary."""
+返回一个包含 "chapters" 数组的JSON对象，列出每个章节的边界。
+
+【重要提醒】章节标题请使用中文。"""

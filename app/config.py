@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # DeepSeek API
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"
-    deepseek_model: str = "deepseek-chat"
+    deepseek_model: str = "deepseek-v4-flash"
 
     # Application
     max_upload_size_mb: int = 50

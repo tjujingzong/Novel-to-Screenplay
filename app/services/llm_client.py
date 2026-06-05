@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+from collections.abc import AsyncGenerator
 from typing import Type, TypeVar
 
 from openai import AsyncOpenAI
@@ -84,6 +85,57 @@ class DeepSeekClient:
                     await asyncio.sleep(2 ** attempt)
 
         raise RuntimeError(f"LLM call failed after {max_retries} attempts: {last_error}")
+
+    async def complete_stream(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float | None = None,
+    ) -> tuple[str, AsyncGenerator[str, None]]:
+        """Send a streaming chat completion request to DeepSeek.
+
+        Returns:
+            A tuple of (full_text_coroutine, chunk_generator).
+            The caller should iterate over chunk_generator to get chunks in real-time.
+            After iteration, full_text will contain the complete response.
+        """
+        temp = temperature if temperature is not None else self._temperature
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        kwargs: dict = {
+            "model": self._model,
+            "messages": messages,
+            "temperature": temp,
+            "max_tokens": self._max_output_tokens,
+            "stream": True,
+        }
+
+        class StreamResult:
+            """Holds the full text after streaming completes."""
+            full_text: str = ""
+
+        result = StreamResult()
+
+        async def chunk_generator() -> AsyncGenerator[str, None]:
+            chunks: list[str] = []
+            try:
+                response = await self._client.chat.completions.create(**kwargs)
+                async for chunk in response:
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        text = chunk.choices[0].delta.content
+                        chunks.append(text)
+                        yield text
+            except Exception as e:
+                logger.error("Streaming LLM call failed: %s", e)
+                yield f"\n[ERROR: {e}]"
+            finally:
+                result.full_text = "".join(chunks)
+
+        return result, chunk_generator()
 
     def _parse_json_response(self, content: str, model: Type[T]) -> T:
         """Parse a JSON string response into a Pydantic model."""

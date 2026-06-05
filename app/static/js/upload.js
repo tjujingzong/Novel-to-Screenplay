@@ -14,6 +14,12 @@
 
     let selectedFile = null;
 
+    // Load cached API key from localStorage
+    const cachedApiKey = localStorage.getItem('deepseek_api_key');
+    if (cachedApiKey) {
+        apiKeyInput.value = cachedApiKey;
+    }
+
     // Toggle API key visibility
     toggleApiKeyBtn.addEventListener('click', () => {
         const isPassword = apiKeyInput.type === 'password';
@@ -63,7 +69,7 @@
         const ext = '.' + file.name.split('.').pop().toLowerCase();
 
         if (!validExts.includes(ext)) {
-            alert('Unsupported file type. Please upload TXT, MD, DOCX, or PDF files.');
+            alert('不支持的文件类型。请上传 TXT、MD、DOCX 或 PDF 文件。');
             return;
         }
 
@@ -86,7 +92,7 @@
         if (!selectedFile) return;
 
         convertBtn.disabled = true;
-        convertBtn.textContent = 'Uploading...';
+        convertBtn.textContent = '上传中...';
 
         try {
             const formData = new FormData();
@@ -99,7 +105,7 @@
 
             if (!uploadResp.ok) {
                 const err = await uploadResp.json();
-                throw new Error(err.detail || 'Upload failed');
+                throw new Error(err.detail || '上传失败');
             }
 
             const uploadData = await uploadResp.json();
@@ -107,6 +113,12 @@
 
             // Start conversion
             const apiKey = apiKeyInput.value.trim();
+
+            // Store API key for editor page
+            if (apiKey) {
+                sessionStorage.setItem('api_key', apiKey);
+                localStorage.setItem('deepseek_api_key', apiKey);
+            }
 
             const convertResp = await fetch(`/api/convert/${jobId}`, {
                 method: 'POST',
@@ -116,7 +128,7 @@
 
             if (!convertResp.ok) {
                 const err = await convertResp.json();
-                throw new Error(err.detail || 'Failed to start conversion');
+                throw new Error(err.detail || '启动转换失败');
             }
 
             // Hand off to conversion.js for progress tracking
@@ -125,9 +137,9 @@
             }
 
         } catch (err) {
-            alert('Error: ' + err.message);
+            alert('错误：' + err.message);
             convertBtn.disabled = false;
-            convertBtn.textContent = 'Start Conversion';
+            convertBtn.textContent = '开始转换';
         }
     });
 })();

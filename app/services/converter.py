@@ -1,5 +1,6 @@
 """Core prose-to-screenplay conversion service."""
 
+import json
 import logging
 
 from pydantic import BaseModel
@@ -38,6 +39,7 @@ async def convert_chapter(
     character_catalog_str: str,
     context: ConversionContext,
     client: DeepSeekClient,
+    stream_callback=None,
 ) -> ConversionResult:
     """Convert a single novel chapter into screenplay scenes.
 
@@ -46,6 +48,7 @@ async def convert_chapter(
         character_catalog_str: Formatted character catalog string.
         context: Running conversion context for continuity.
         client: The LLM client.
+        stream_callback: Optional async callback that receives streaming chunks.
 
     Returns:
         ConversionResult with the generated Act and a continuity summary.
@@ -64,12 +67,26 @@ async def convert_chapter(
     )
 
     try:
-        result = await client.complete(
-            system_prompt=conv_prompts.SYSTEM_PROMPT,
-            user_prompt=user_prompt,
-            response_model=ChapterActResult,
-        )
-        act = _parse_act(result.act, context)
+        if stream_callback:
+            # Use streaming mode
+            stream_result, chunk_gen = await client.complete_stream(
+                system_prompt=conv_prompts.SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+            )
+            async for chunk in chunk_gen:
+                await stream_callback(chunk)
+            await stream_callback("\n")
+            content = stream_result.full_text
+            # Parse the full text as JSON
+            act_data = _parse_json_content(content)
+            act = _parse_act(act_data.get("act", act_data), context)
+        else:
+            result = await client.complete(
+                system_prompt=conv_prompts.SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                response_model=ChapterActResult,
+            )
+            act = _parse_act(result.act, context)
     except Exception as e:
         logger.error("Failed to convert chapter %d: %s", chapter.number, e)
         act = _create_fallback_act(chapter, context)
@@ -82,6 +99,16 @@ async def convert_chapter(
     context.running_scene_number += len(act.scenes)
 
     return ConversionResult(act=act, summary=summary)
+
+
+def _parse_json_content(content: str) -> dict:
+    """Parse JSON from LLM content, handling markdown fences."""
+    text = content.strip()
+    if text.startswith("```"):
+        lines = text.split("\n")
+        lines = [line for line in lines if not line.startswith("```")]
+        text = "\n".join(lines)
+    return json.loads(text)
 
 
 def format_character_catalog(characters) -> str:

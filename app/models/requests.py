@@ -38,3 +38,19 @@ class ConversionResult(BaseModel):
 class ConvertRequest(BaseModel):
     """Request body for starting a conversion."""
     api_key: str = Field(default="", description="User-provided DeepSeek API Key")
+
+
+class YamlEditRequest(BaseModel):
+    """Request body for saving edited YAML."""
+    yaml_content: str = Field(..., description="Edited YAML content")
+
+
+class RegenerateRequest(BaseModel):
+    """Request body for regenerating YAML with user suggestions."""
+    suggestions: str = Field(..., description="User's suggestions/feedback for regeneration")
+    api_key: str = Field(default="", description="User-provided DeepSeek API Key")
+
+
+class ScreenplayEditRequest(BaseModel):
+    """Request body for saving edited screenplay."""
+    screenplay_content: str = Field(..., description="Edited screenplay content")

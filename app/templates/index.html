@@ -1,13 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Novel - Novel to Screenplay{% endblock %}
+{% block title %}上传小说 - 小说转剧本{% endblock %}
+
+{% block head %}
+<!-- marked.js for Markdown rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+    .stream-md { line-height: 1.6; font-size: 0.8rem; color: #a7f3d0; }
+    .stream-md h1, .stream-md h2, .stream-md h3 { color: #6ee7b7; font-weight: 700; margin: 0.8rem 0 0.4rem; }
+    .stream-md h1 { font-size: 1.2rem; border-bottom: 1px solid #374151; padding-bottom: 0.3rem; }
+    .stream-md h2 { font-size: 1.05rem; }
+    .stream-md h3 { font-size: 0.95rem; }
+    .stream-md p { margin: 0.3rem 0; }
+    .stream-md strong { color: #bbf7d0; }
+    .stream-md em { color: #86efac; }
+    .stream-md hr { border: none; border-top: 1px solid #374151; margin: 0.6rem 0; }
+    .stream-md blockquote { border-left: 3px solid #6ee7b7; padding-left: 0.5rem; color: #86efac; margin: 0.5rem 0; }
+    .stream-md ul, .stream-md ol { padding-left: 1.2rem; margin: 0.3rem 0; }
+    .stream-md code { background: #374151; padding: 0.1rem 0.3rem; border-radius: 0.2rem; }
+    .stream-md pre { background: #111827; padding: 0.5rem; border-radius: 0.375rem; overflow-x: auto; margin: 0.5rem 0; }
+    .stream-md pre code { background: transparent; padding: 0; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
     <!-- Upload Section -->
     <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Upload Novel File</h2>
-        <p class="text-sm text-gray-500 mb-4">Support TXT, Markdown, DOCX, PDF formats (max 50MB)</p>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">上传小说文件</h2>
+        <p class="text-sm text-gray-500 mb-4">支持 TXT、Markdown、DOCX、PDF 格式（最大 50MB）</p>
 
         <div id="drop-zone"
              class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
@@ -15,7 +36,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M24 8v24m0-24l-8 8m8-8l8 8M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4"/>
             </svg>
-            <p class="text-gray-600 mb-2">Drag and drop your file here, or <span class="text-blue-600 font-medium">click to browse</span></p>
+            <p class="text-gray-600 mb-2">拖拽文件到这里，或 <span class="text-blue-600 font-medium">点击浏览</span></p>
             <p class="text-xs text-gray-400">.txt .md .docx .pdf</p>
             <input type="file" id="file-input" accept=".txt,.md,.markdown,.docx,.pdf" class="hidden">
         </div>
@@ -32,14 +53,14 @@
                     <p id="file-meta" class="text-sm text-gray-500"></p>
                 </div>
             </div>
-            <button id="remove-file" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
+            <button id="remove-file" class="text-red-500 hover:text-red-700 text-sm">移除</button>
         </div>
     </div>
 
     <!-- API Key Section -->
     <div class="bg-white rounded-lg border border-gray-200 p-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-2">API Key</h2>
-        <p class="text-sm text-gray-500 mb-4">Enter your DeepSeek API Key for LLM-powered conversion</p>
+        <p class="text-sm text-gray-500 mb-4">输入您的 DeepSeek API Key 用于 LLM 转换</p>
         <div class="flex items-center gap-3">
             <input type="password" id="api-key-input" placeholder="sk-..."
                    class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -61,19 +82,19 @@
     <div id="convert-section" class="hidden">
         <button id="convert-btn"
                 class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Start Conversion
+            开始转换
         </button>
     </div>
 
     <!-- Progress Section -->
     <div id="progress-section" class="hidden bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Converting...</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">转换中...</h2>
 
         <div class="space-y-4">
             <!-- Stage indicator -->
             <div class="flex items-center gap-3">
                 <div class="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                <span id="stage-text" class="text-gray-600">Initializing...</span>
+                <span id="stage-text" class="text-gray-600">初始化中...</span>
             </div>
 
             <!-- Progress bar -->
@@ -88,6 +109,17 @@
                 <span id="progress-detail"></span>
                 <span id="progress-percent">0%</span>
             </div>
+
+            <!-- Streaming Output -->
+            <div class="mt-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-600">实时输出</span>
+                    <button id="toggle-stream" class="text-xs text-blue-600 hover:text-blue-800">展开/收起</button>
+                </div>
+                <div id="stream-output" class="bg-gray-900 rounded-lg p-4 font-mono text-xs overflow-auto max-h-80 hidden">
+                    <div id="stream-text" class="stream-md"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -98,11 +130,11 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <h3 class="text-red-800 font-semibold">Conversion Error</h3>
+            <h3 class="text-red-800 font-semibold">转换错误</h3>
         </div>
         <p id="error-message" class="text-red-600 text-sm"></p>
         <button id="retry-btn" class="mt-4 text-red-600 hover:text-red-800 text-sm font-medium">
-            Try Again
+            重试
         </button>
     </div>
 
@@ -114,7 +146,7 @@
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <div>
-                <h2 class="text-lg font-semibold text-gray-800">Conversion Complete</h2>
+                <h2 class="text-lg font-semibold text-gray-800">转换完成</h2>
                 <p id="validation-summary" class="text-sm text-gray-500"></p>
             </div>
         </div>
@@ -122,11 +154,11 @@
         <div class="flex gap-3">
             <a id="preview-link" href="#"
                class="flex-1 text-center bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                Preview YAML
+                预览/编辑剧本
             </a>
             <a id="download-link" href="#"
                class="flex-1 text-center bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                Download YAML
+                下载 YAML
             </a>
         </div>
     </div>
@@ -135,11 +167,11 @@
     <div class="bg-white rounded-lg border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-4">
             <div>
-                <h2 class="text-lg font-semibold text-gray-800">Sample Novels</h2>
-                <p class="text-sm text-gray-500">Try these sample chapters to test the conversion</p>
+                <h2 class="text-lg font-semibold text-gray-800">样例小说</h2>
+                <p class="text-sm text-gray-500">试试这些样例章节来测试转换效果</p>
             </div>
             <button id="refresh-samples" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                Refresh
+                刷新
             </button>
         </div>
         <div id="samples-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -154,15 +186,15 @@
     <div class="bg-white rounded-lg border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-4">
             <div>
-                <h2 class="text-lg font-semibold text-gray-800">Conversion History</h2>
-                <p class="text-sm text-gray-500">Your recent conversion jobs (in-memory)</p>
+                <h2 class="text-lg font-semibold text-gray-800">转换历史</h2>
+                <p class="text-sm text-gray-500">最近的转换任务（内存存储）</p>
             </div>
             <button id="refresh-history" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                Refresh
+                刷新
             </button>
         </div>
         <div id="history-container">
-            <p class="text-center py-8 text-gray-400">No conversion history yet</p>
+            <p class="text-center py-8 text-gray-400">暂无转换历史</p>
         </div>
     </div>
 </div>
