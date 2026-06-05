@@ -29,9 +29,9 @@ def validate_screenplay(screenplay: Screenplay) -> list[ValidationIssue]:
     # Check metadata
     if not screenplay.metadata.title:
         issues.append(ValidationIssue(
-            severity="error",
+            severity="warning",
             path="metadata.title",
-            message="Title is required",
+            message="标题未设置",
         ))
 
     # Build character ID set for cross-reference validation
@@ -54,7 +54,7 @@ def validate_screenplay(screenplay: Screenplay) -> list[ValidationIssue]:
             issues.append(ValidationIssue(
                 severity="warning",
                 path=f"{act_path}.number",
-                message=f"Act number {act.number} is not sequential (expected {act_idx + 1})",
+                message=f"幕号 {act.number} 不连续（期望 {act_idx + 1}）",
             ))
 
         # Check scenes exist
@@ -62,7 +62,7 @@ def validate_screenplay(screenplay: Screenplay) -> list[ValidationIssue]:
             issues.append(ValidationIssue(
                 severity="warning",
                 path=f"{act_path}.scenes",
-                message="Act has no scenes",
+                message="该幕没有场景",
             ))
             continue
 
@@ -74,7 +74,7 @@ def validate_screenplay(screenplay: Screenplay) -> list[ValidationIssue]:
                 issues.append(ValidationIssue(
                     severity="warning",
                     path=f"{scene_path}.elements",
-                    message="Scene has no elements",
+                    message="场景没有元素",
                 ))
 
             # Check character references in elements
@@ -84,9 +84,9 @@ def validate_screenplay(screenplay: Screenplay) -> list[ValidationIssue]:
                 if isinstance(elem, (DialogueElement, ParentheticalElement)):
                     if elem.character_id and elem.character_id not in char_ids:
                         issues.append(ValidationIssue(
-                            severity="error",
+                            severity="warning",
                             path=f"{elem_path}.character_id",
-                            message=f"Character '{elem.character_id}' not found in character catalog",
+                            message=f"角色 '{elem.character_id}' 未在角色目录中找到",
                         ))
 
             # Check characters_present references
@@ -95,7 +95,7 @@ def validate_screenplay(screenplay: Screenplay) -> list[ValidationIssue]:
                     issues.append(ValidationIssue(
                         severity="warning",
                         path=f"{scene_path}.characters_present[{cp_idx}]",
-                        message=f"Character '{char_id}' not found in character catalog",
+                        message=f"角色 '{char_id}' 未在角色目录中找到",
                     ))
 
     # Summary note

@@ -40,6 +40,7 @@ async def convert_chapter(
     context: ConversionContext,
     client: DeepSeekClient,
     stream_callback=None,
+    character_id_map: dict[str, str] | None = None,
 ) -> ConversionResult:
     """Convert a single novel chapter into screenplay scenes.
 
@@ -49,6 +50,7 @@ async def convert_chapter(
         context: Running conversion context for continuity.
         client: The LLM client.
         stream_callback: Optional async callback that receives streaming chunks.
+        character_id_map: Map from alias/name to canonical character ID for normalization.
 
     Returns:
         ConversionResult with the generated Act and a continuity summary.
@@ -79,14 +81,14 @@ async def convert_chapter(
             content = stream_result.full_text
             # Parse the full text as JSON
             act_data = _parse_json_content(content)
-            act = _parse_act(act_data.get("act", act_data), context)
+            act = _parse_act(act_data.get("act", act_data), context, character_id_map)
         else:
             result = await client.complete(
                 system_prompt=conv_prompts.SYSTEM_PROMPT,
                 user_prompt=user_prompt,
                 response_model=ChapterActResult,
             )
-            act = _parse_act(result.act, context)
+            act = _parse_act(result.act, context, character_id_map)
     except Exception as e:
         logger.error("Failed to convert chapter %d: %s", chapter.number, e)
         act = _create_fallback_act(chapter, context)
@@ -124,8 +126,21 @@ def format_character_catalog(characters) -> str:
     return "\n".join(lines)
 
 
-def _parse_act(act_data: dict, context: ConversionContext) -> Act:
+def _parse_act(act_data: dict, context: ConversionContext, character_id_map: dict[str, str] | None = None) -> Act:
     """Parse the LLM's act response into a Pydantic Act model."""
+    # Helper to normalize character IDs
+    def _normalize_char_id(char_id: str) -> str:
+        if not char_id or not character_id_map:
+            return char_id
+        # Direct match
+        if char_id in character_id_map:
+            return character_id_map[char_id]
+        # Case-insensitive match
+        lower_id = char_id.lower().strip()
+        if lower_id in character_id_map:
+            return character_id_map[lower_id]
+        return char_id
+
     scenes = []
 
     for i, scene_data in enumerate(act_data.get("scenes", [])):
@@ -142,9 +157,11 @@ def _parse_act(act_data: dict, context: ConversionContext) -> Act:
                     elements.append(ActionElement(**elem_data))
                 elif elem_type == "dialogue":
                     from app.models.screenplay import DialogueElement
+                    elem_data["character_id"] = _normalize_char_id(elem_data.get("character_id", ""))
                     elements.append(DialogueElement(**elem_data))
                 elif elem_type == "parenthetical":
                     from app.models.screenplay import ParentheticalElement
+                    elem_data["character_id"] = _normalize_char_id(elem_data.get("character_id", ""))
                     elements.append(ParentheticalElement(**elem_data))
                 elif elem_type == "transition":
                     from app.models.screenplay import TransitionElement
@@ -170,7 +187,7 @@ def _parse_act(act_data: dict, context: ConversionContext) -> Act:
             heading=heading,
             description=scene_data.get("description"),
             setting=scene_data.get("setting"),
-            characters_present=scene_data.get("characters_present", []),
+            characters_present=[_normalize_char_id(cid) for cid in scene_data.get("characters_present", [])],
             elements=elements,
             transition_out=scene_data.get("transition_out"),
         ))

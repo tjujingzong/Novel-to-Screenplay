@@ -10,10 +10,10 @@
         btn.addEventListener('click', () => {
             const tabName = btn.dataset.tab;
             tabBtns.forEach(b => {
-                b.classList.remove('active', 'border-b-2', 'border-blue-600', 'text-blue-600');
+                b.classList.remove('active', 'border-b-2', 'border-indigo-600', 'text-indigo-600', 'bg-white');
                 b.classList.add('text-gray-500');
             });
-            btn.classList.add('active', 'border-b-2', 'border-blue-600', 'text-blue-600');
+            btn.classList.add('active', 'border-b-2', 'border-indigo-600', 'text-indigo-600', 'bg-white');
             btn.classList.remove('text-gray-500');
             tabContents.forEach(c => c.classList.add('hidden'));
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');

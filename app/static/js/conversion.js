@@ -13,6 +13,10 @@
     const previewLink = document.getElementById('preview-link');
     const downloadLink = document.getElementById('download-link');
     const validationSummary = document.getElementById('validation-summary');
+    const validationIssuesPanel = document.getElementById('validation-issues-panel');
+    const validationIssuesList = document.getElementById('validation-issues-list');
+    const toggleIssuesBtn = document.getElementById('toggle-issues-btn');
+    const issuesChevron = document.getElementById('issues-chevron');
     const retryBtn = document.getElementById('retry-btn');
     const streamOutput = document.getElementById('stream-output');
     const streamText = document.getElementById('stream-text');
@@ -31,6 +35,12 @@
         'complete': '转换完成！',
         'error': '发生错误',
     };
+
+    // Toggle validation issues panel
+    toggleIssuesBtn.addEventListener('click', () => {
+        validationIssuesList.classList.toggle('hidden');
+        issuesChevron.classList.toggle('rotate-180');
+    });
 
     // Toggle stream output visibility
     toggleStreamBtn.addEventListener('click', () => {
@@ -131,6 +141,11 @@
         progressSection.classList.add('hidden');
         resultSection.classList.remove('hidden');
 
+        // Reset upload button state so user can start a new conversion
+        if (window.resetUploadState) {
+            window.resetUploadState();
+        }
+
         previewLink.href = `/preview/${jobId}`;
         downloadLink.href = `/api/result/${jobId}`;
 
@@ -143,9 +158,14 @@
                 const warnings = issues.filter(i => i.severity === 'warning').length;
 
                 if (errors === 0 && warnings === 0) {
-                    validationSummary.textContent = '未发现验证问题';
+                    validationSummary.textContent = '✅ 验证通过，未发现问题';
+                    validationIssuesPanel.classList.add('hidden');
+                } else if (errors === 0) {
+                    validationSummary.textContent = `✅ 生成成功（${warnings} 条提示）`;
+                    showValidationIssues(issues);
                 } else {
                     validationSummary.textContent = `${errors} 个错误，${warnings} 个警告`;
+                    showValidationIssues(issues);
                 }
             })
             .catch(() => {
@@ -158,10 +178,45 @@
         }
     }
 
+    function showValidationIssues(issues) {
+        validationIssuesPanel.classList.remove('hidden');
+
+        if (issues.length === 0) {
+            validationIssuesList.innerHTML = '<p class="text-sm text-gray-500">无验证问题</p>';
+            return;
+        }
+
+        const severityIcon = {
+            'error': '<span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>',
+            'warning': '<span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>',
+        };
+
+        let html = '<div class="space-y-2">';
+        issues.forEach((issue, idx) => {
+            const icon = severityIcon[issue.severity] || severityIcon['warning'];
+            html += `
+                <div class="flex items-start gap-2 text-sm py-1 border-b border-gray-200 last:border-0">
+                    ${icon}
+                    <div class="flex-1 min-w-0">
+                        <span class="text-gray-700 font-mono text-xs">${issue.path}</span>
+                        <p class="text-gray-600 mt-0.5">${issue.message}</p>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        validationIssuesList.innerHTML = html;
+    }
+
     function showError(message) {
         progressSection.classList.add('hidden');
         errorSection.classList.remove('hidden');
         errorMessage.textContent = message;
+
+        // Reset upload button state
+        if (window.resetUploadState) {
+            window.resetUploadState();
+        }
     }
 
     retryBtn.addEventListener('click', () => {

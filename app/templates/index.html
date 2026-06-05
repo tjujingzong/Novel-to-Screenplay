@@ -24,177 +24,195 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <!-- Upload Section -->
-    <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">上传小说文件</h2>
-        <p class="text-sm text-gray-500 mb-4">支持 TXT、Markdown、DOCX、PDF 格式（最大 50MB）</p>
+<!-- Two-column layout -->
+<div class="flex flex-col md:flex-row gap-6">
 
-        <div id="drop-zone"
-             class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
-            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 48 48">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M24 8v24m0-24l-8 8m8-8l8 8M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4"/>
-            </svg>
-            <p class="text-gray-600 mb-2">拖拽文件到这里，或 <span class="text-blue-600 font-medium">点击浏览</span></p>
-            <p class="text-xs text-gray-400">.txt .md .docx .pdf</p>
-            <input type="file" id="file-input" accept=".txt,.md,.markdown,.docx,.pdf" class="hidden">
-        </div>
+    <!-- ========== LEFT COLUMN: Upload / Progress / Result ========== -->
+    <div class="flex-1 min-w-0 space-y-5">
 
-        <!-- File Info -->
-        <div id="file-info" class="hidden mt-4 p-4 bg-gray-50 rounded-lg flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                <div>
-                    <p id="file-name" class="font-medium text-gray-800"></p>
-                    <p id="file-meta" class="text-sm text-gray-500"></p>
+        <!-- Upload Section -->
+        <div class="card">
+            <h2 class="text-base font-semibold text-gray-800 mb-1">上传小说文件</h2>
+            <p class="text-sm text-gray-500 mb-4">支持 TXT、Markdown、DOCX、PDF 格式（最大 50MB）</p>
+
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-icon">
+                    <svg class="h-12 w-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                              d="M24 8v24m0-24l-8 8m8-8l8 8M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4"/>
+                    </svg>
                 </div>
+                <p class="text-gray-600 mb-1">拖拽文件到这里，或 <span class="text-indigo-600 font-medium">点击浏览</span></p>
+                <p class="text-xs text-gray-400">.txt .md .docx .pdf</p>
+                <input type="file" id="file-input" accept=".txt,.md,.markdown,.docx,.pdf" class="hidden">
             </div>
-            <button id="remove-file" class="text-red-500 hover:text-red-700 text-sm">移除</button>
-        </div>
-    </div>
 
-    <!-- API Key Section -->
-    <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">API Key</h2>
-        <p class="text-sm text-gray-500 mb-4">输入您的 DeepSeek API Key 用于 LLM 转换</p>
-        <div class="flex items-center gap-3">
-            <input type="password" id="api-key-input" placeholder="sk-..."
-                   class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                   autocomplete="off">
-            <button id="toggle-api-key" type="button"
-                    class="text-gray-500 hover:text-gray-700 p-2.5 border border-gray-300 rounded-lg"
-                    title="Show/Hide API Key">
-                <svg id="eye-icon" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
+            <!-- File Info -->
+            <div id="file-info" class="hidden mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                        <svg class="h-5 w-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p id="file-name" class="font-medium text-gray-800 text-sm"></p>
+                        <p id="file-meta" class="text-xs text-gray-500"></p>
+                    </div>
+                </div>
+                <button id="remove-file" class="text-red-400 hover:text-red-600 text-sm p-1">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Convert Button -->
+        <div id="convert-section" class="hidden">
+            <button id="convert-btn"
+                    class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
+                开始转换
             </button>
         </div>
-    </div>
 
-    <!-- Convert Button -->
-    <div id="convert-section" class="hidden">
-        <button id="convert-btn"
-                class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            开始转换
-        </button>
-    </div>
-
-    <!-- Progress Section -->
-    <div id="progress-section" class="hidden bg-white rounded-lg border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">转换中...</h2>
-
-        <div class="space-y-4">
-            <!-- Stage indicator -->
-            <div class="flex items-center gap-3">
-                <div class="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                <span id="stage-text" class="text-gray-600">初始化中...</span>
+        <!-- Progress Section -->
+        <div id="progress-section" class="hidden card">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="animate-spin h-5 w-5 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
+                <span id="stage-text" class="text-gray-700 font-medium text-sm">初始化中...</span>
             </div>
 
             <!-- Progress bar -->
-            <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                 <div id="progress-bar"
-                     class="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                     class="progress-bar-gradient h-2.5 rounded-full transition-all duration-500"
                      style="width: 0%"></div>
             </div>
 
             <!-- Detail info -->
-            <div class="flex justify-between text-sm text-gray-500">
+            <div class="flex justify-between text-xs text-gray-500 mt-2">
                 <span id="progress-detail"></span>
-                <span id="progress-percent">0%</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Streaming Output (outside progress section to persist after completion) -->
-    <div id="stream-section" class="hidden">
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-gray-600">实时输出</span>
-            <button id="toggle-stream" class="text-xs text-blue-600 hover:text-blue-800">展开/收起</button>
-        </div>
-        <div id="stream-output" class="bg-gray-900 rounded-lg p-4 font-mono text-xs overflow-auto max-h-80">
-            <div id="stream-text" class="stream-md"></div>
-        </div>
-    </div>
-
-    <!-- Error Section -->
-    <div id="error-section" class="hidden bg-red-50 border border-red-200 rounded-lg p-6">
-        <div class="flex items-center gap-3 mb-2">
-            <svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <h3 class="text-red-800 font-semibold">转换错误</h3>
-        </div>
-        <p id="error-message" class="text-red-600 text-sm"></p>
-        <button id="retry-btn" class="mt-4 text-red-600 hover:text-red-800 text-sm font-medium">
-            重试
-        </button>
-    </div>
-
-    <!-- Result Section -->
-    <div id="result-section" class="hidden bg-white rounded-lg border border-gray-200 p-6">
-        <div class="flex items-center gap-3 mb-4">
-            <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <div>
-                <h2 class="text-lg font-semibold text-gray-800">转换完成</h2>
-                <p id="validation-summary" class="text-sm text-gray-500"></p>
+                <span id="progress-percent" class="font-mono font-medium">0%</span>
             </div>
         </div>
 
-        <div class="flex gap-3">
-            <a id="preview-link" href="#"
-               class="flex-1 text-center bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                预览/编辑剧本
-            </a>
-            <a id="download-link" href="#"
-               class="flex-1 text-center bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                下载 YAML
-            </a>
-        </div>
-    </div>
-
-    <!-- Sample Novels Section -->
-    <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h2 class="text-lg font-semibold text-gray-800">样例小说</h2>
-                <p class="text-sm text-gray-500">试试这些样例章节来测试转换效果</p>
+        <!-- Streaming Output (outside progress section to persist after completion) -->
+        <div id="stream-section" class="hidden">
+            <div class="bg-gray-900 rounded-xl overflow-hidden shadow-lg">
+                <!-- Terminal-style title bar -->
+                <div class="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span class="text-xs text-gray-400 ml-2">实时输出</span>
+                    </div>
+                    <button id="toggle-stream" class="text-xs text-gray-400 hover:text-gray-200 transition-colors">
+                        展开/收起
+                    </button>
+                </div>
+                <div id="stream-output" class="p-4 font-mono text-xs overflow-auto max-h-80">
+                    <div id="stream-text" class="stream-md"></div>
+                </div>
             </div>
-            <button id="refresh-samples" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                刷新
+        </div>
+
+        <!-- Error Section -->
+        <div id="error-section" class="hidden card border-l-4 border-l-red-500 bg-red-50">
+            <div class="flex items-center gap-3 mb-2">
+                <svg class="h-5 w-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <h3 class="text-red-800 font-semibold text-sm">转换错误</h3>
+            </div>
+            <p id="error-message" class="text-red-600 text-sm ml-8"></p>
+            <button id="retry-btn" class="mt-3 ml-8 text-red-600 hover:text-red-800 text-sm font-medium">
+                重试
             </button>
         </div>
-        <div id="samples-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div class="text-center py-8 text-gray-400">
-                <div class="animate-spin h-6 w-6 border-2 border-gray-300 border-t-blue-600 rounded-full mx-auto mb-2"></div>
-                Loading samples...
+
+        <!-- Result Section -->
+        <div id="result-section" class="hidden card border-l-4 border-l-green-500">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-gray-800">转换完成</h2>
+                    <p id="validation-summary" class="text-sm text-gray-500"></p>
+                </div>
+            </div>
+
+            <!-- Validation Issues Detail Panel -->
+            <div id="validation-issues-panel" class="hidden mb-4">
+                <button id="toggle-issues-btn"
+                        class="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 mb-2">
+                    <svg id="issues-chevron" class="h-4 w-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                    <span>查看验证详情</span>
+                </button>
+                <div id="validation-issues-list" class="hidden bg-gray-50 rounded-lg p-4 max-h-60 overflow-auto">
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <a id="preview-link" href="#"
+                   class="flex-1 text-center bg-white border border-gray-300 text-gray-700 font-medium py-2.5 px-4 rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                    预览/编辑剧本
+                </a>
+                <a id="download-link" href="#"
+                   class="flex-1 text-center bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-medium py-2.5 px-4 rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all text-sm shadow-sm">
+                    下载 YAML
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- History Section -->
-    <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h2 class="text-lg font-semibold text-gray-800">转换历史</h2>
-                <p class="text-sm text-gray-500">最近的转换任务（内存存储）</p>
+    <!-- ========== RIGHT COLUMN: Samples / History ========== -->
+    <div class="w-full md:w-[380px] flex-shrink-0 space-y-5">
+
+        <!-- Sample Novels Section -->
+        <div class="card">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-base font-semibold text-gray-800">样例小说</h2>
+                <button id="refresh-samples" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium flex items-center gap-1">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    刷新
+                </button>
             </div>
-            <button id="refresh-history" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                刷新
-            </button>
+            <div id="samples-container" class="space-y-3">
+                <div class="text-center py-8 text-gray-400">
+                    <div class="animate-spin h-5 w-5 border-2 border-gray-300 border-t-indigo-600 rounded-full mx-auto mb-2"></div>
+                    <span class="text-xs">加载中...</span>
+                </div>
+            </div>
         </div>
-        <div id="history-container">
-            <p class="text-center py-8 text-gray-400">暂无转换历史</p>
+
+        <!-- History Section -->
+        <div class="card">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-base font-semibold text-gray-800">转换历史</h2>
+                <button id="refresh-history" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium flex items-center gap-1">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    刷新
+                </button>
+            </div>
+            <div id="history-container">
+                <p class="text-center py-6 text-gray-400 text-sm">暂无转换历史</p>
+            </div>
         </div>
     </div>
 </div>

@@ -8,21 +8,54 @@
     <link rel="stylesheet" href="/static/css/app.css">
     {% block head %}{% endblock %}
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white border-b border-gray-200">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="/" class="text-xl font-bold text-gray-800">小说转剧本</a>
-            <span class="text-sm text-gray-500">AI 智能小说剧本转换工具</span>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Navigation Bar -->
+    <nav class="nav-gradient shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="flex items-center justify-between h-14">
+                <!-- Brand -->
+                <a href="/" class="flex items-center gap-2 text-white">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    <span class="text-lg font-bold tracking-wide">小说转剧本</span>
+                    <span class="hidden sm:inline text-xs text-white/70 ml-1">AI 智能转换工具</span>
+                </a>
+
+                <!-- API Key (compact inline) -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-white/70 hidden sm:inline">API Key</span>
+                    <div class="relative flex items-center">
+                        <input type="password" id="api-key-input" placeholder="API Key: sk-..."
+                               class="nav-api-input"
+                               autocomplete="off">
+                        <button id="toggle-api-key" type="button"
+                                class="absolute right-2 text-white/60 hover:text-white"
+                                title="显示/隐藏 API Key">
+                            <svg id="eye-icon" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto px-4 py-8">
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-gray-200 mt-12">
-        <div class="max-w-5xl mx-auto px-4 py-4 text-center text-sm text-gray-400">
-            Powered by DeepSeek AI
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-400 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between text-sm">
+            <span>Powered by DeepSeek AI</span>
+            <span class="text-gray-500">小说转剧本 v1.0</span>
         </div>
     </footer>
 

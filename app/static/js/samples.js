@@ -19,7 +19,7 @@
             renderSamples();
         } catch (err) {
             samplesContainer.innerHTML = `
-                <p class="text-center py-8 text-red-500">加载样例失败：${err.message}</p>
+                <p class="text-center py-6 text-red-500 text-sm">加载样例失败：${err.message}</p>
             `;
         }
     }
@@ -27,24 +27,26 @@
     function renderSamples() {
         if (currentSamples.length === 0) {
             samplesContainer.innerHTML = `
-                <p class="text-center py-8 text-gray-400">暂无样例</p>
+                <p class="text-center py-6 text-gray-400 text-sm">暂无样例</p>
             `;
             return;
         }
 
         samplesContainer.innerHTML = currentSamples.map(sample => `
-            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-colors">
-                <h3 class="font-semibold text-gray-800 mb-2">${escapeHtml(sample.title)}</h3>
-                <p class="text-xs text-gray-500 mb-3">${sample.word_count} characters</p>
-                <p class="text-sm text-gray-600 mb-4 line-clamp-3" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-                    ${escapeHtml(sample.preview.replace(/[#*\n]/g, ' ').substring(0, 120))}...
+            <div class="border border-gray-200 rounded-xl p-3 hover:border-indigo-300 hover:shadow-sm transition-all bg-white">
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="font-semibold text-gray-800 text-sm">${escapeHtml(sample.title)}</h3>
+                    <span class="text-xs text-gray-400 ml-2 flex-shrink-0">${sample.word_count} 字</span>
+                </div>
+                <p class="text-xs text-gray-500 mb-3 line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    ${escapeHtml(sample.preview.replace(/[#*\n]/g, ' ').substring(0, 100))}
                 </p>
                 <div class="flex gap-2">
-                    <button class="flex-1 text-xs bg-blue-600 text-white py-1.5 px-3 rounded hover:bg-blue-700 transition-colors use-sample-btn"
+                    <button class="flex-1 text-xs bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-1.5 px-3 rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all use-sample-btn"
                             data-sample-id="${sample.id}">
                         使用
                     </button>
-                    <button class="text-xs text-gray-600 py-1.5 px-3 border border-gray-300 rounded hover:bg-gray-50 transition-colors preview-sample-btn"
+                    <button class="text-xs text-gray-500 py-1.5 px-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors preview-sample-btn"
                             data-sample-id="${sample.id}">
                         预览
                     </button>
@@ -122,7 +124,7 @@
             renderHistory(data.history || []);
         } catch (err) {
             historyContainer.innerHTML = `
-                <p class="text-center py-8 text-red-500">加载历史失败：${err.message}</p>
+                <p class="text-center py-6 text-red-500 text-sm">加载历史失败：${err.message}</p>
             `;
         }
     }
@@ -130,7 +132,7 @@
     function renderHistory(history) {
         if (history.length === 0) {
             historyContainer.innerHTML = `
-                <p class="text-center py-8 text-gray-400">暂无转换历史</p>
+                <p class="text-center py-6 text-gray-400 text-sm">暂无转换历史</p>
             `;
             return;
         }

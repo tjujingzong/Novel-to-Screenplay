@@ -87,6 +87,12 @@
     // Expose for sample novels
     window.handleSampleFile = handleFile;
 
+    // Expose reset function for after conversion completes
+    window.resetUploadState = function () {
+        convertBtn.disabled = false;
+        convertBtn.textContent = '开始转换';
+    };
+
     // Upload + convert
     convertBtn.addEventListener('click', async () => {
         if (!selectedFile) return;
