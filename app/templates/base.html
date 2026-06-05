@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Novel to Screenplay{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/app.css">
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="text-xl font-bold text-gray-800">Novel to Screenplay</a>
+            <span class="text-sm text-gray-500">AI Novel-to-Screenplay Conversion Tool</span>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-gray-200 mt-12">
+        <div class="max-w-5xl mx-auto px-4 py-4 text-center text-sm text-gray-400">
+            Powered by DeepSeek AI
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

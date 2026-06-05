@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Preview Screenplay - Novel to Screenplay{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-800">Screenplay Preview</h2>
+        <div class="flex gap-3">
+            <button id="copy-btn"
+                    class="bg-white border border-gray-300 text-gray-700 text-sm font-medium py-2 px-4 rounded-lg hover:bg-gray-50">
+                Copy to Clipboard
+            </button>
+            <a id="download-btn" href="/api/result/{{ job_id }}"
+               class="bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+                Download YAML
+            </a>
+            <a href="/"
+               class="bg-white border border-gray-300 text-gray-700 text-sm font-medium py-2 px-4 rounded-lg hover:bg-gray-50">
+                Back
+            </a>
+        </div>
+    </div>
+
+    <div id="yaml-container" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div id="yaml-loading" class="p-8 text-center text-gray-500">Loading...</div>
+        <pre id="yaml-code" class="hidden"><code class="language-yaml" id="yaml-content"></code></pre>
+    </div>
+</div>
+
+<script>
+    const jobId = "{{ job_id }}";
+</script>
+<script src="/static/js/preview.js"></script>
+{% endblock %}
