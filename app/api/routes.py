@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from app.config import get_settings
 from app.dependencies import templates
 from app.models.enums import ConversionStage
-from app.models.requests import ConversionStatus, UploadResponse
+from app.models.requests import ConversionStatus, ConvertRequest, UploadResponse
 from app.models.screenplay import Metadata
 from app.services import (
     assembler,
@@ -101,6 +101,8 @@ async def upload_file(file: UploadFile):
         "status": ConversionStatus(job_id=job_id, stage=ConversionStage.UPLOADED.value),
         "yaml_content": None,
         "validation_issues": [],
+        "original_filename": file.filename or "unknown",
+        "created_at": __import__('datetime').datetime.now().isoformat(),
     }
 
     return UploadResponse(
@@ -112,12 +114,16 @@ async def upload_file(file: UploadFile):
 
 
 @router.post("/api/convert/{job_id}")
-async def start_conversion(job_id: str, background_tasks: BackgroundTasks):
+async def start_conversion(job_id: str, body: ConvertRequest, background_tasks: BackgroundTasks):
     """Start the conversion process as a background task."""
     job = _get_job(job_id)
 
     if job["status"].stage == ConversionStage.CONVERTING.value:
         raise HTTPException(status_code=400, detail="Conversion already started")
+
+    # Store user-provided API key in job data
+    if body.api_key:
+        job["api_key"] = body.api_key
 
     background_tasks.add_task(_run_conversion, job_id)
 
@@ -201,6 +207,88 @@ async def get_validation(job_id: str):
     return {"issues": job.get("validation_issues", [])}
 
 
+# ─── Samples & History ───────────────────────────────────────────────────────
+
+@router.get("/api/samples")
+async def list_samples():
+    """List available sample novels."""
+    settings = get_settings()
+    samples_dir = settings.data_dir / "samples"
+
+    if not samples_dir.exists():
+        return {"samples": []}
+
+    samples = []
+    for f in sorted(samples_dir.iterdir()):
+        if f.is_file() and f.suffix in (".txt", ".md"):
+            # Extract title from filename (e.g., sample1_月光下的秘密.md -> 月光下的秘密)
+            parts = f.stem.split("_", 1)
+            title = parts[1] if len(parts) > 1 else f.stem
+
+            # Read first few lines to get a preview
+            try:
+                content = f.read_text(encoding="utf-8")
+                preview = content[:300] + "..." if len(content) > 300 else content
+                word_count = len(content)
+            except Exception:
+                preview = "无法读取预览"
+                word_count = 0
+
+            samples.append({
+                "id": f.stem,
+                "title": title,
+                "filename": f.name,
+                "preview": preview,
+                "word_count": word_count,
+            })
+
+    return {"samples": samples}
+
+
+@router.get("/api/samples/{sample_id}")
+async def get_sample(sample_id: str):
+    """Get the content of a specific sample."""
+    settings = get_settings()
+    samples_dir = settings.data_dir / "samples"
+
+    # Find the file
+    for ext in (".txt", ".md"):
+        file_path = samples_dir / f"{sample_id}{ext}"
+        if file_path.exists():
+            content = file_path.read_text(encoding="utf-8")
+            parts = file_path.stem.split("_", 1)
+            title = parts[1] if len(parts) > 1 else file_path.stem
+            return {
+                "id": sample_id,
+                "title": title,
+                "content": content,
+            }
+
+    raise HTTPException(status_code=404, detail="Sample not found")
+
+
+@router.get("/api/history")
+async def get_history():
+    """Get conversion history (in-memory)."""
+    history = []
+    for job_id, job in _jobs.items():
+        status = job.get("status")
+        if status:
+            history.append({
+                "job_id": job_id,
+                "stage": status.stage,
+                "progress_percent": status.progress_percent,
+                "total_chapters": status.total_chapters,
+                "error_message": status.error_message,
+                "filename": job.get("original_filename", "Unknown"),
+                "created_at": job.get("created_at"),
+            })
+
+    # Sort by created_at descending (newest first)
+    history.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+    return {"history": history}
+
+
 # ─── Background Conversion Pipeline ─────────────────────────────────────────
 
 async def _run_conversion(job_id: str):
@@ -237,7 +325,7 @@ async def _do_conversion(job_id: str):
         progress_percent=20, total_chapters=total_chapters,
     )
 
-    client = DeepSeekClient()
+    client = DeepSeekClient(api_key=job.get("api_key") or None)
     try:
         characters = await character_extractor.extract_characters(chapters, client)
 

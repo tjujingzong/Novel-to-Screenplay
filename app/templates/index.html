@@ -36,6 +36,27 @@
         </div>
     </div>
 
+    <!-- API Key Section -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">API Key</h2>
+        <p class="text-sm text-gray-500 mb-4">Enter your DeepSeek API Key for LLM-powered conversion</p>
+        <div class="flex items-center gap-3">
+            <input type="password" id="api-key-input" placeholder="sk-..."
+                   class="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   autocomplete="off">
+            <button id="toggle-api-key" type="button"
+                    class="text-gray-500 hover:text-gray-700 p-2.5 border border-gray-300 rounded-lg"
+                    title="Show/Hide API Key">
+                <svg id="eye-icon" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
     <!-- Convert Button -->
     <div id="convert-section" class="hidden">
         <button id="convert-btn"
@@ -109,10 +130,46 @@
             </a>
         </div>
     </div>
+
+    <!-- Sample Novels Section -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Sample Novels</h2>
+                <p class="text-sm text-gray-500">Try these sample chapters to test the conversion</p>
+            </div>
+            <button id="refresh-samples" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                Refresh
+            </button>
+        </div>
+        <div id="samples-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="text-center py-8 text-gray-400">
+                <div class="animate-spin h-6 w-6 border-2 border-gray-300 border-t-blue-600 rounded-full mx-auto mb-2"></div>
+                Loading samples...
+            </div>
+        </div>
+    </div>
+
+    <!-- History Section -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Conversion History</h2>
+                <p class="text-sm text-gray-500">Your recent conversion jobs (in-memory)</p>
+            </div>
+            <button id="refresh-history" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                Refresh
+            </button>
+        </div>
+        <div id="history-container">
+            <p class="text-center py-8 text-gray-400">No conversion history yet</p>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="/static/js/upload.js"></script>
 <script src="/static/js/conversion.js"></script>
+<script src="/static/js/samples.js"></script>
 {% endblock %}

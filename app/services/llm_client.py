@@ -18,10 +18,11 @@ T = TypeVar("T", bound=BaseModel)
 class DeepSeekClient:
     """Async wrapper around the DeepSeek API with retry and structured output."""
 
-    def __init__(self):
+    def __init__(self, api_key: str | None = None):
         settings = get_settings()
+        resolved_key = api_key or settings.deepseek_api_key
         self._client = AsyncOpenAI(
-            api_key=settings.deepseek_api_key,
+            api_key=resolved_key,
             base_url=settings.deepseek_base_url,
             timeout=settings.llm_timeout,
         )

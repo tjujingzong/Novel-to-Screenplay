@@ -9,8 +9,16 @@
     const removeBtn = document.getElementById('remove-file');
     const convertSection = document.getElementById('convert-section');
     const convertBtn = document.getElementById('convert-btn');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const toggleApiKeyBtn = document.getElementById('toggle-api-key');
 
     let selectedFile = null;
+
+    // Toggle API key visibility
+    toggleApiKeyBtn.addEventListener('click', () => {
+        const isPassword = apiKeyInput.type === 'password';
+        apiKeyInput.type = isPassword ? 'text' : 'password';
+    });
 
     // Click to browse
     dropZone.addEventListener('click', () => fileInput.click());
@@ -70,6 +78,9 @@
         convertSection.classList.remove('hidden');
     }
 
+    // Expose for sample novels
+    window.handleSampleFile = handleFile;
+
     // Upload + convert
     convertBtn.addEventListener('click', async () => {
         if (!selectedFile) return;
@@ -95,8 +106,12 @@
             const jobId = uploadData.job_id;
 
             // Start conversion
+            const apiKey = apiKeyInput.value.trim();
+
             const convertResp = await fetch(`/api/convert/${jobId}`, {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: apiKey }),
             });
 
             if (!convertResp.ok) {

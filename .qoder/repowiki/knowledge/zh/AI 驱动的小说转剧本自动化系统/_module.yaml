@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: ""
+title: AI 驱动的小说转剧本自动化系统
+scope:
+    - .gitignore
+    - README.md
+    - pyproject.toml
+    - app/
+    - docs/
+    - tests/
+    - .env.example
+source_files: []
+depends_on: []
+related_to: []

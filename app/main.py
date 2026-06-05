@@ -42,4 +42,4 @@ app.include_router(router)
 def run():
     """Entry point for the novel-serve script."""
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8008, reload=True)

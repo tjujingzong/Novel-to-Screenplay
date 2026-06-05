@@ -33,3 +33,8 @@ class ConversionResult(BaseModel):
     job_id: str
     yaml_content: str = Field(..., description="Generated YAML screenplay")
     validation_issues: list[ValidationIssue] = Field(default_factory=list)
+
+
+class ConvertRequest(BaseModel):
+    """Request body for starting a conversion."""
+    api_key: str = Field(default="", description="User-provided DeepSeek API Key")
