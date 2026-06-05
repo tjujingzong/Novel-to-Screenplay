@@ -93,11 +93,14 @@ def _select_sample_indices(chapters: list[Chapter]) -> list[int]:
 
 
 def _consolidate_characters(raw_characters: list[dict]) -> list[Character]:
-    """Merge and deduplicate character entries from multiple extraction passes."""
+    """Merge and deduplicate character entries from multiple extraction passes.
+
+    Uses name + aliases matching to merge characters like "诸葛亮" and "孔明".
+    """
     if not raw_characters:
         return []
 
-    # Group by normalized name
+    # First pass: group by ID
     by_id: dict[str, dict] = {}
 
     for char_data in raw_characters:
@@ -124,8 +127,27 @@ def _consolidate_characters(raw_characters: list[dict]) -> list[Character]:
             char_data["id"] = char_id
             by_id[char_id] = char_data
 
+    # Second pass: merge characters whose names overlap with aliases
+    merged: dict[str, dict] = {}
+    for char_id, char_data in by_id.items():
+        all_names = _get_all_names(char_data)
+        found_match = False
+
+        for existing_id, existing_data in list(merged.items()):
+            existing_names = _get_all_names(existing_data)
+            # Check if any name overlaps
+            if all_names & existing_names:
+                # Merge into existing
+                _merge_char_data(existing_data, char_data)
+                found_match = True
+                break
+
+        if not found_match:
+            merged[char_id] = char_data
+
+    # Convert to Character objects
     characters = []
-    for char_data in by_id.values():
+    for char_data in merged.values():
         try:
             characters.append(Character(
                 id=char_data["id"],
@@ -136,13 +158,50 @@ def _consolidate_characters(raw_characters: list[dict]) -> list[Character]:
                 age_range=char_data.get("age_range"),
                 gender=char_data.get("gender"),
                 occupation=char_data.get("occupation"),
-                relationships=[],  # Will be validated later
+                relationships=[],
                 notes=char_data.get("notes"),
             ))
         except Exception as e:
             logger.warning("Failed to create Character from data: %s, error: %s", char_data, e)
 
     return characters
+
+
+def _get_all_names(char_data: dict) -> set[str]:
+    """Get all possible names for a character (name + aliases), normalized."""
+    names = set()
+    name = char_data.get("name", "")
+    if name:
+        names.add(name.strip())
+    for alias in char_data.get("aliases", []):
+        if alias:
+            names.add(alias.strip())
+    # Also add the ID if it looks like a name
+    char_id = char_data.get("id", "")
+    if char_id and any('\u4e00' <= c <= '\u9fff' for c in char_id):
+        names.add(char_id)
+    return names
+
+
+def _merge_char_data(target: dict, source: dict):
+    """Merge source character data into target."""
+    # Keep richer description
+    if len(source.get("description", "")) > len(target.get("description", "")):
+        target["description"] = source["description"]
+    # Merge aliases
+    existing_aliases = set(target.get("aliases", []))
+    existing_aliases.update(source.get("aliases", []))
+    # Also add source name as alias
+    source_name = source.get("name", "")
+    if source_name and source_name != target.get("name", ""):
+        existing_aliases.add(source_name)
+    target["aliases"] = list(existing_aliases)
+    # Merge relationships
+    existing_rels = {(r.get("target_id"), r.get("type")) for r in target.get("relationships", [])}
+    for rel in source.get("relationships", []):
+        key = (rel.get("target_id"), rel.get("type"))
+        if key not in existing_rels:
+            target.setdefault("relationships", []).append(rel)
 
 
 def _make_slug(name: str) -> str:

@@ -20,14 +20,14 @@ CHAPTER_PATTERNS = [
     re.compile(r"^(?:Chapter|CHAPTER)\s+[\dIVXLCDMivxlcdm]+[^\n]*", re.MULTILINE),
     # English: "Part 1", "Book 1"
     re.compile(r"^(?:Part|PART|Book|BOOK)\s+[\dIVXLCDMivxlcdm]+[^\n]*", re.MULTILINE),
-    # Chinese: "第一章", "第二章", "第1章" (章/回/卷/集/篇 only — not 节 which means section)
+    # Chinese: "第一章", "第二章", "第1章" (章/回/卷/集/篇/部)
     re.compile(r"^第[一二三四五六七八九十百零\d]+[章回卷集篇部][^\n]*", re.MULTILINE),
     # Chinese: "一、", "二、" style
     re.compile(r"^[一二三四五六七八九十]+[、．.]", re.MULTILINE),
-    # Markdown headings that look like chapters
-    re.compile(r"^#{1,3}\s+(?:Chapter|第[一二三四五六七八九十百零\d]+[章回卷集篇部])", re.MULTILINE),
-    # Numbered sections: "1.", "2.", etc. at start of line
-    re.compile(r"^\d{1,3}[.、][^\n]*", re.MULTILINE),
+    # Markdown headings: # 第一章, ## 第一回, ### Chapter 1
+    re.compile(r"^#{1,3}\s+(?:Chapter|第[一二三四五六七八九十百零\d]+[章回卷集篇部])[^\n]*", re.MULTILINE),
+    # Markdown heading with title (for single-chapter texts like # 三国演义·第四十六回)
+    re.compile(r"^#\s+[^\n]*[·•][^\n]*第[一二三四五六七八九十百零\d]+回[^\n]*", re.MULTILINE),
 ]
 
 
@@ -97,24 +97,30 @@ def _build_chapters_from_matches(text: str, matches: list[re.Match]) -> list[Cha
 
 
 def _heuristic_split(text: str) -> list[Chapter]:
-    """Split text into roughly equal sections at paragraph boundaries.
+    """Split text into sections at paragraph boundaries.
 
-    Targets 3 sections minimum, splitting at double newlines.
+    Only splits if the text is long enough to warrant multiple chapters.
+    Short texts are kept as a single chapter.
     """
     paragraphs = re.split(r"\n\s*\n", text)
     paragraphs = [p.strip() for p in paragraphs if p.strip()]
 
-    if len(paragraphs) < 3:
-        # Text is too short to split meaningfully
+    if len(paragraphs) < 2:
         return [Chapter(number=1, title="Full Text", content=text, start_char=0)]
 
-    # Determine number of sections: aim for ~3000-5000 words per section
     from app.services.file_parser import count_words
     total_words = count_words(text)
-    target_words_per_section = 4000
-    num_sections = max(3, min(total_words // target_words_per_section, len(paragraphs)))
+
+    # Short texts: keep as 1 chapter
+    # Chinese ~2000 chars or English ~1500 words
+    if total_words < 3000:
+        return [Chapter(number=1, title="Full Text", content=text, start_char=0)]
+
+    # Determine number of sections: aim for ~4000-6000 words per section
+    target_words_per_section = 5000
+    num_sections = max(1, min(total_words // target_words_per_section, len(paragraphs)))
     # Cap at a reasonable number
-    num_sections = min(num_sections, 30)
+    num_sections = min(num_sections, 20)
 
     # Distribute paragraphs evenly
     sections = _distribute_paragraphs(paragraphs, num_sections)

@@ -16,6 +16,7 @@
     const retryBtn = document.getElementById('retry-btn');
     const streamOutput = document.getElementById('stream-output');
     const streamText = document.getElementById('stream-text');
+    const streamSection = document.getElementById('stream-section');
     const toggleStreamBtn = document.getElementById('toggle-stream');
     let streamBuffer = '';  // Accumulate raw text for markdown rendering
 
@@ -39,7 +40,7 @@
     window.startProgressTracking = function (jobId) {
         convertSection.classList.add('hidden');
         progressSection.classList.remove('hidden');
-        streamOutput.classList.remove('hidden');
+        streamSection.classList.remove('hidden');
         streamBuffer = '';
         streamText.innerHTML = '';
 

@@ -109,17 +109,17 @@
                 <span id="progress-detail"></span>
                 <span id="progress-percent">0%</span>
             </div>
+        </div>
+    </div>
 
-            <!-- Streaming Output -->
-            <div class="mt-4">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-gray-600">实时输出</span>
-                    <button id="toggle-stream" class="text-xs text-blue-600 hover:text-blue-800">展开/收起</button>
-                </div>
-                <div id="stream-output" class="bg-gray-900 rounded-lg p-4 font-mono text-xs overflow-auto max-h-80 hidden">
-                    <div id="stream-text" class="stream-md"></div>
-                </div>
-            </div>
+    <!-- Streaming Output (outside progress section to persist after completion) -->
+    <div id="stream-section" class="hidden">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-600">实时输出</span>
+            <button id="toggle-stream" class="text-xs text-blue-600 hover:text-blue-800">展开/收起</button>
+        </div>
+        <div id="stream-output" class="bg-gray-900 rounded-lg p-4 font-mono text-xs overflow-auto max-h-80">
+            <div id="stream-text" class="stream-md"></div>
         </div>
     </div>
 
