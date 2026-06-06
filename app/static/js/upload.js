@@ -26,6 +26,14 @@
         apiKeyInput.type = isPassword ? 'text' : 'password';
     });
 
+    // Auto-save API key to localStorage on input
+    apiKeyInput.addEventListener('input', () => {
+        const val = apiKeyInput.value.trim();
+        if (val) {
+            localStorage.setItem('deepseek_api_key', val);
+        }
+    });
+
     // Click to browse
     dropZone.addEventListener('click', () => fileInput.click());
 

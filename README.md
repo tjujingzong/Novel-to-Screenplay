@@ -1,6 +1,14 @@
 # Novel to Screenplay
-
 AI 驱动的小说转剧本工具 —— 将小说文本自动转换为结构化 YAML 剧本，降低改编门槛，提升创作效率。
+
+![Demo](pics/demo.png)
+
+> **Demo 视频**：[【七牛云实战——AI 驱动的小说转剧本工具】](https://www.bilibili.com/video/BV1Q6EH6FEG8)
+
+
+> **在线体验**：<https://novel-to-screenplay.zeabur.app/>
+>
+> 欢迎体验！服务有效期至 **2026 年 7 月 5 日**（仅充值了一个月），后续如有用户持续使用会考虑续费。
 
 ## 功能特性
 
@@ -38,6 +46,7 @@ AI 驱动的小说转剧本工具 —— 将小说文本自动转换为结构化
 cd novel
 python3 -m venv .venv
 source .venv/bin/activate
+```
 
 在 Windows PowerShell 中，激活虚拟环境的命令是：
 
@@ -115,7 +124,8 @@ novel/
 │   ├── templates/              # Jinja2 HTML 模板
 │   └── static/                 # 前端 CSS / JS
 ├── docs/
-│   └── YAML_SCHEMA.md          # YAML Schema 定义文档（含设计说明）
+│   ├── YAML_SCHEMA.md          # YAML Schema 定义文档（含设计说明）
+│   └── DEPLOYMENT.md           # 部署指南
 └── tests/                      # 55 个单元/集成测试
 ```
 
@@ -186,66 +196,13 @@ ruff check app/ tests/ --fix
 
 ## 部署
 
-### Zeabur 一键部署（推荐）
+详见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
-项目已内置 [Dockerfile](Dockerfile)，支持 Zeabur 一键部署。Zeabur 支持支付宝/微信登录，香港节点国内访问快。
+## 项目背景
 
-#### 步骤
+本项目是七牛云 **「XEngineer 新工科计划」— 暑期 OPC · 未来 CEO 人才实训营** 的参赛项目。
 
-1. **推送代码到 GitHub**
-
-   ```bash
-   git add Dockerfile .dockerignore
-   git commit -m "chore: add Zeabur deployment config"
-   git push
-   ```
-
-2. **在 Zeabur 创建服务**
-
-   - 注册/登录 [Zeabur](https://zeabur.com)（支持 GitHub / 支付宝 / 微信登录）
-   - 点击 **New Project**，选择服务器地区（推荐 **Hong Kong**）
-   - 点击 **Add Service** → **Deploy from GitHub repository** → 选择本仓库
-
-3. **配置环境变量**
-
-   部署后在 Zeabur 控制台的 **Environment Variables** 中添加：
-
-   | 变量名 | 值 | 说明 |
-   |--------|------|------|
-   | `DEEPSEEK_API_KEY` | `sk-your-key-here` | **必填**，DeepSeek API 密钥 |
-   | `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | 可按需修改 |
-   | `DEEPSEEK_MODEL` | `deepseek-chat` | 可按需修改 |
-   | `DATA_DIR` | `/data` | Docker 容器内数据路径 |
-
-   填入后 Zeabur 会自动重新部署。
-
-4. **访问服务**
-
-   - 部署完成后（约 2–3 分钟），在 **Service → Domain** 中获取公网地址
-   - 访问 `https://your-project.zeabur.app` 即可使用
-   - 也可在 Domain 设置中绑定自定义域名
-
-> **说明**：Zeabur 按用量计费，每月有免费额度（约 ¥5），普通使用基本不花钱。详见 [Zeabur 定价](https://zeabur.com/pricing)。
-
-### 手动部署（自有服务器 / 云服务器）
-
-适用于已有阿里云、腾讯云等国内云服务器的场景。
-
-```bash
-# 构建 Docker 镜像
-docker build -t novel-to-screenplay .
-
-# 运行容器
-docker run -d \
-  -p 8000:8000 \
-  -e DEEPSEEK_API_KEY=sk-your-key-here \
-  -e DATA_DIR=/data \
-  -v $(pwd)/data:/data \
-  --name novel-to-screenplay \
-  novel-to-screenplay
-```
-
-启动后访问 `http://你的服务器IP:8000`。如需公网访问，请确保云服务器安全组已放行 8000 端口。
+欢迎提交 Issue 和 Pull Request，一起让这个项目变得更好！
 
 ## License
 

@@ -324,9 +324,71 @@ async def regenerate_yaml(job_id: str, body: RegenerateRequest):
 
 # ─── YAML to Screenplay ─────────────────────────────────────────────────────
 
+def _split_yaml_by_acts(yaml_text: str) -> list[tuple[str, str]]:
+    """Split YAML screenplay into per-act segments.
+
+    Returns a list of (act_title, act_yaml_text) tuples.
+    If the YAML cannot be split (e.g. single act or parse failure),
+    returns a single-element list with the full YAML.
+    """
+    import io
+    from ruamel.yaml import YAML
+
+    yaml = YAML()
+    yaml.default_flow_style = False
+    yaml.allow_unicode = True
+    yaml.width = 120
+
+    try:
+        data = yaml.load(yaml_text)
+        if hasattr(data, '_data'):
+            # ruamel.yaml may return a CommentedMap
+            data = dict(data)
+    except Exception:
+        return [("完整剧本", yaml_text)]
+
+    if not isinstance(data, dict):
+        return [("完整剧本", yaml_text)]
+
+    # Handle top-level 'screenplay' wrapper key
+    screenplay_data = data.get("screenplay", data)
+    if not isinstance(screenplay_data, dict):
+        screenplay_data = data
+
+    structure = screenplay_data.get("structure", {})
+    acts = structure.get("acts", []) if isinstance(structure, dict) else []
+
+    if len(acts) <= 1:
+        return [("完整剧本", yaml_text)]
+
+    # Build per-act YAML snippets preserving metadata and characters
+    metadata = screenplay_data.get("metadata", {})
+    characters = screenplay_data.get("characters", [])
+    result = []
+
+    for i, act in enumerate(acts):
+        act_title = act.get("title", f"第{i + 1}幕")
+        # Build a mini-YAML with just this act
+        mini = {
+            "metadata": dict(metadata) if i == 0 else {"title": metadata.get("title", "")},
+            "characters": list(characters) if i == 0 else [],
+            "structure": {"acts": [act]},
+        }
+        stream = io.StringIO()
+        yaml.dump(mini, stream)
+        act_yaml = stream.getvalue()
+        result.append((act_title, act_yaml))
+
+    return result
+
+
 @router.post("/api/screenplay/{job_id}")
 async def convert_to_screenplay(job_id: str, body: RegenerateRequest):
-    """Convert YAML to formatted screenplay, streaming the result."""
+    """Convert YAML to formatted screenplay, streaming the result.
+
+    Splits the YAML by acts and converts each act separately to avoid
+    LLM output truncation on long screenplays.
+    """
     job = _get_job(job_id)
     current_yaml = job.get("yaml_content", "")
 
@@ -336,21 +398,48 @@ async def convert_to_screenplay(job_id: str, body: RegenerateRequest):
     async def stream_generator():
         client = DeepSeekClient(api_key=body.api_key or job.get("api_key") or None)
         try:
-            user_prompt = regen_prompts.SCREENPLAY_FORMAT_USER_PROMPT_TEMPLATE.format(
-                yaml_content=current_yaml,
-            )
+            # Split YAML into per-act segments
+            act_segments = _split_yaml_by_acts(current_yaml)
+            logger.info("Splitting YAML into %d act(s) for screenplay conversion", len(act_segments))
 
-            stream_result, chunk_gen = await client.complete_stream(
-                system_prompt=regen_prompts.SCREENPLAY_FORMAT_SYSTEM_PROMPT,
-                user_prompt=user_prompt,
-            )
+            full_screenplay_parts: list[str] = []
 
-            async for chunk in chunk_gen:
-                data = json.dumps({"text": chunk}, ensure_ascii=False)
-                yield f"data: {data}\n\n"
+            for idx, (act_title, act_yaml) in enumerate(act_segments):
+                # Send act separator as a status hint
+                if idx > 0:
+                    sep = "\n\n---\n\n"
+                    full_screenplay_parts.append(sep)
+                    yield f"data: {json.dumps({'text': sep}, ensure_ascii=False)}\n\n"
 
-            # Save the screenplay
-            screenplay_text = stream_result.full_text
+                # Build prompt for this act
+                if idx == 0 and len(act_segments) > 1:
+                    act_note = f"（这是第 {idx + 1}/{len(act_segments)} 幕，请只转换这一幕的内容）"
+                elif idx > 0 and idx < len(act_segments) - 1:
+                    act_note = f"（这是第 {idx + 1}/{len(act_segments)} 幕，请只转换这一幕的内容。场景编号请接续前面的编号）"
+                else:
+                    act_note = ""
+
+                user_prompt = regen_prompts.SCREENPLAY_FORMAT_USER_PROMPT_TEMPLATE.format(
+                    yaml_content=act_yaml,
+                )
+                if act_note:
+                    user_prompt += f"\n\n{act_note}"
+
+                # Stream the conversion for this act
+                stream_result, chunk_gen = await client.complete_stream(
+                    system_prompt=regen_prompts.SCREENPLAY_FORMAT_SYSTEM_PROMPT,
+                    user_prompt=user_prompt,
+                )
+
+                async for chunk in chunk_gen:
+                    data = json.dumps({"text": chunk}, ensure_ascii=False)
+                    yield f"data: {data}\n\n"
+
+                act_text = stream_result.full_text
+                full_screenplay_parts.append(act_text)
+
+            # Combine all parts
+            screenplay_text = "".join(full_screenplay_parts)
             job["screenplay_content"] = screenplay_text
 
             # Save to file

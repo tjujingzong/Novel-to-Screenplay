@@ -90,8 +90,18 @@ async def convert_chapter(
             )
             act = _parse_act(result.act, context, character_id_map)
     except Exception as e:
-        logger.error("Failed to convert chapter %d: %s", chapter.number, e)
-        act = _create_fallback_act(chapter, context)
+        logger.warning("First attempt failed for chapter %d: %s — retrying once", chapter.number, e)
+        # Retry once before falling back
+        try:
+            result = await client.complete(
+                system_prompt=conv_prompts.SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                response_model=ChapterActResult,
+            )
+            act = _parse_act(result.act, context, character_id_map)
+        except Exception as e2:
+            logger.error("Retry also failed for chapter %d: %s — using rich fallback", chapter.number, e2)
+            act = _create_fallback_act(chapter, context)
 
     # Generate continuity summary
     summary = await _generate_summary(act, chapter.number, client)
@@ -202,28 +212,78 @@ def _parse_act(act_data: dict, context: ConversionContext, character_id_map: dic
 
 
 def _create_fallback_act(chapter: Chapter, context: ConversionContext) -> Act:
-    """Create a minimal act when LLM conversion fails."""
+    """Create a fallback act from raw chapter text when LLM conversion fails.
+
+    Instead of a placeholder, splits the chapter text into scenes with real content.
+    """
     from app.models.screenplay import SceneHeading, ActionElement
 
-    context.running_scene_number += 1
+    text = chapter.content.strip()
 
-    scene = Scene(
-        id=f"act-{context.act_number}-scene-1",
-        number=context.running_scene_number,
-        heading=SceneHeading(location="VARIOUS LOCATIONS", time_of_day="DAY", int_ext="INT"),
-        description=f"Scene adapted from {chapter.title or f'Chapter {chapter.number}'}",
-        elements=[ActionElement(
-            type="action",
-            text=f"[This chapter could not be fully converted: {chapter.title or f'Chapter {chapter.number}'}]",
-            importance="key",
-        )],
-    )
+    # Split text into paragraphs, group into scenes (~2000 chars per scene)
+    paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+    if not paragraphs:
+        paragraphs = [p.strip() for p in text.split('\n') if p.strip()]
+    if not paragraphs:
+        paragraphs = [text[:2000]] if text else ["（无内容）"]
+
+    # Group paragraphs into scenes
+    scene_groups: list[list[str]] = []
+    current_group: list[str] = []
+    current_len = 0
+    max_scene_len = 2000
+
+    for para in paragraphs:
+        if current_len + len(para) > max_scene_len and current_group:
+            scene_groups.append(current_group)
+            current_group = []
+            current_len = 0
+        current_group.append(para)
+        current_len += len(para)
+    if current_group:
+        scene_groups.append(current_group)
+
+    # Create scenes
+    scenes = []
+    chapter_title = chapter.title or f"第{chapter.number}章"
+
+    for i, group in enumerate(scene_groups):
+        context.running_scene_number += 1
+        scene_num = context.running_scene_number
+
+        # Use first short sentence or chapter title as location hint
+        first_line = group[0][:50]
+        location = f"{chapter_title} - 场景{i + 1}" if len(scene_groups) > 1 else chapter_title
+
+        elements = []
+        for para in group:
+            elements.append(ActionElement(
+                type="action",
+                text=para,
+                importance="standard",
+            ))
+
+        scenes.append(Scene(
+            id=f"act-{context.act_number}-scene-{i + 1}",
+            number=scene_num,
+            heading=SceneHeading(
+                location=location,
+                time_of_day="DAY",
+                int_ext="INT",
+            ),
+            description=f"基于原文内容自动生成（{chapter_title}）",
+            setting=None,
+            characters_present=[],
+            elements=elements,
+            transition_out="CUT_TO" if i < len(scene_groups) - 1 else None,
+        ))
 
     return Act(
         id=f"act-{context.act_number}",
         number=context.act_number,
-        title=chapter.title or f"Act {context.act_number}",
-        scenes=[scene],
+        title=chapter_title,
+        description=f"基于原文自动分段生成（共{len(scenes)}个场景）",
+        scenes=scenes,
     )
 
 

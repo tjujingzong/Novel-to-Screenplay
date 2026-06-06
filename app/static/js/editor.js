@@ -94,10 +94,130 @@
         }
     });
 
+    // ─── Screenplay Text Post-Processor ──────────────────────────────────────
+    // Fallback renderer: cleans up LLM output formatting issues for better display.
+    // Only adds Markdown markers to plain-text lines that clearly match screenplay patterns.
+    // If the LLM already outputs Markdown, existing markers are preserved.
+
+    function formatScreenplayText(text) {
+        // Step 1: Strip leading/trailing whitespace from every line
+        let lines = text.split('\n').map(l => l.trim());
+
+        // Step 2: Collapse 3+ consecutive blank lines → 2
+        lines = collapseBlanks(lines, 2);
+
+        // Step 3: Add Markdown markers to plain-text screenplay elements
+        // Only process lines that DON'T already have Markdown formatting
+        const alreadyMarkdown = line => /^#{1,6}\s|^\*\*|^\*[^*]|^>\s|^[-*]\s/.test(line);
+        const charNameRe = /^[\u4e00-\u9fff]{1,8}$/;
+        const parenRe = /^[（(][^)）]*[)）]$/;
+        // Flexible scene heading: 内/外. 地点 - 时间 (various dash and dot styles)
+        const sceneHeadRe = /^[内外]+[.．·]\s*.+[-—–].+/;
+        // Act heading: 第一幕 / 第一幕：草船借箭
+        const actHeadRe = /^第[一二三四五六七八九十\d]+[幕章]/;
+        // Transition keywords
+        const transitionRe = /^(切至|淡出|淡入|叠化|硬切|匹配剪辑|划变|交叉剪辑|蒙太奇|时间流逝)[：:]*$/;
+
+        let out = [];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            // Empty line — pass through
+            if (line === '') {
+                out.push('');
+                continue;
+            }
+
+            // Already has Markdown — don't touch it
+            if (alreadyMarkdown(line)) {
+                out.push(line);
+                continue;
+            }
+
+            // Act heading
+            if (actHeadRe.test(line)) {
+                out.push('', `## ${line}`, '');
+                continue;
+            }
+
+            // Scene heading
+            if (sceneHeadRe.test(line)) {
+                out.push('', `### ${line}`, '');
+                continue;
+            }
+
+            // Transition
+            if (transitionRe.test(line)) {
+                out.push('', `> **${line}**`, '');
+                continue;
+            }
+
+            // Character name: short Chinese-only text, not a heading
+            // Only mark if the NEXT non-empty line looks like dialogue (not another heading/action)
+            if (charNameRe.test(line)) {
+                const nextNonEmpty = findNextNonEmpty(lines, i + 1);
+                if (nextNonEmpty && !sceneHeadRe.test(nextNonEmpty) && !actHeadRe.test(nextNonEmpty)) {
+                    out.push('', `**${line}**`, '');
+                    continue;
+                }
+            }
+
+            // Parenthetical on its own line: （语气提示）
+            if (parenRe.test(line)) {
+                out.push(`*${line}*`);
+                continue;
+            }
+
+            // Inline parenthetical at start of line: （拱手）对白内容
+            const inlineParen = line.match(/^([（(][^)）]*[)）])\s*(.+)$/);
+            if (inlineParen) {
+                out.push(`*${inlineParen[1]}* ${inlineParen[2]}`);
+                continue;
+            }
+
+            // Default: keep line as-is
+            out.push(line);
+        }
+
+        // Step 4: Final cleanup — collapse excessive blanks again
+        out = collapseBlanks(out, 2);
+
+        return out.join('\n').trim();
+    }
+
+    // Helper: collapse consecutive blank lines to at most `max`
+    function collapseBlanks(lines, max) {
+        const result = [];
+        let run = 0;
+        for (const line of lines) {
+            if (line === '') {
+                run++;
+                if (run <= max) result.push('');
+            } else {
+                run = 0;
+                result.push(line);
+            }
+        }
+        return result;
+    }
+
+    // Helper: find the next non-empty line starting from index
+    function findNextNonEmpty(lines, startIdx) {
+        for (let i = startIdx; i < lines.length; i++) {
+            if (lines[i].trim() !== '') return lines[i].trim();
+        }
+        return null;
+    }
+
     // ─── Markdown Rendering Helper ──────────────────────────────────────────
 
     function renderMarkdown(container, text) {
         container.innerHTML = marked.parse(text);
+    }
+
+    function renderScreenplay(container, text) {
+        const formatted = formatScreenplayText(text);
+        container.innerHTML = marked.parse(formatted);
     }
 
     // ─── Regeneration with Suggestions ──────────────────────────────────────
@@ -220,7 +340,7 @@
             screenplayEditorWrap.classList.add('hidden');
             screenplayPreview.classList.remove('hidden');
             screenplayContent = screenplayEditor.value;
-            renderMarkdown(screenplayRendered, screenplayContent);
+            renderScreenplay(screenplayRendered, screenplayContent);
             screenplayToggleEditBtn.textContent = '编辑源码';
         }
     });
@@ -233,7 +353,7 @@
                 const data = await resp.json();
                 if (data.content) {
                     screenplayContent = data.content;
-                    renderMarkdown(screenplayRendered, screenplayContent);
+                    renderScreenplay(screenplayRendered, screenplayContent);
                     screenplayPreview.classList.remove('hidden');
                     screenplayToggleEditBtn.classList.remove('hidden');
                     screenplaySaveBtn.classList.remove('hidden');
@@ -287,7 +407,7 @@
                             const data = JSON.parse(line.slice(6));
                             if (data.text) {
                                 screenplayContent += data.text;
-                                renderMarkdown(screenplayStreamTextEl, screenplayContent);
+                                renderScreenplay(screenplayStreamTextEl, screenplayContent);
                                 const stream = document.getElementById('screenplay-stream');
                                 stream.scrollTop = stream.scrollHeight;
                             }
@@ -305,7 +425,7 @@
             screenplayToggleEditBtn.classList.remove('hidden');
             screenplaySaveBtn.classList.remove('hidden');
             screenplayDownloadBtn.classList.remove('hidden');
-            renderMarkdown(screenplayRendered, screenplayContent);
+            renderScreenplay(screenplayRendered, screenplayContent);
             isEditingScreenplay = false;
             screenplayToggleEditBtn.textContent = '编辑源码';
 
@@ -358,10 +478,30 @@
 
     // ─── Initialize ─────────────────────────────────────────────────────────
 
-    // Load API key from localStorage
+    // Load API key from localStorage and populate navbar input
+    const apiKeyInput = document.getElementById('api-key-input');
+    const toggleApiKeyBtn = document.getElementById('toggle-api-key');
     const cachedKey = localStorage.getItem('deepseek_api_key');
     if (cachedKey) {
         sessionStorage.setItem('api_key', cachedKey);
+        if (apiKeyInput) apiKeyInput.value = cachedKey;
+    }
+
+    // Toggle API key visibility in navbar
+    if (toggleApiKeyBtn && apiKeyInput) {
+        toggleApiKeyBtn.addEventListener('click', () => {
+            const isPassword = apiKeyInput.type === 'password';
+            apiKeyInput.type = isPassword ? 'text' : 'password';
+        });
+
+        // Auto-save API key to localStorage on input
+        apiKeyInput.addEventListener('input', () => {
+            const val = apiKeyInput.value.trim();
+            if (val) {
+                localStorage.setItem('deepseek_api_key', val);
+                sessionStorage.setItem('api_key', val);
+            }
+        });
     }
 
     loadYaml();
