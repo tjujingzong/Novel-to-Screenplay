@@ -13,11 +13,11 @@
 
 ## 更新摘要
 **所做更改**
-- 更新了转换流程控制模块，增加了实时进度跟踪和流式输出显示功能
-- 新增了验证问题面板的详细实现和交互机制
-- 增强了状态重置功能，支持转换完成后的状态恢复
-- 新增了编辑器页面的完整功能实现
-- 更新了样例管理和历史记录功能
+- 更新了编辑器模块，新增了剧本文本后处理器功能
+- 增强了UI功能，包括改进的流式输出显示和终端风格界面
+- 新增了Markdown渲染优化和实时预览功能
+- 改进了API密钥管理和本地存储机制
+- 更新了转换流程控制的错误处理和状态管理
 
 ## 目录
 1. [简介](#简介)
@@ -34,7 +34,7 @@
 
 本项目是一个小说到剧本转换系统，提供了完整的前端JavaScript交互逻辑实现。系统包含四个主要的JavaScript模块：文件上传处理（upload.js）、转换流程控制（conversion.js）、编辑器功能（editor.js）和样例管理（samples.js）。这些模块协同工作，为用户提供从文件上传、转换进度跟踪到最终结果预览和编辑的完整体验。
 
-系统采用现代JavaScript特性，包括异步函数、Promise链式调用、事件监听器管理和错误处理机制。通过模块化的架构设计，实现了清晰的功能分离和良好的可维护性。
+系统采用现代JavaScript特性，包括异步函数、Promise链式调用、事件监听器管理和错误处理机制。通过模块化的架构设计，实现了清晰的功能分离和良好的可维护性。最新的更新包括新的剧本文本后处理器和改进的UI功能，显著提升了用户体验和输出质量。
 
 ## 项目结构
 
@@ -46,13 +46,13 @@ subgraph "前端静态资源"
 JS[JavaScript文件]
 CSS[CSS样式表]
 HTML[HTML模板]
-end
+END
 subgraph "业务逻辑模块"
 Upload[文件上传模块]
 Conversion[转换控制模块]
 Editor[编辑器模块]
 Samples[样例管理模块]
-end
+END
 subgraph "用户界面"
 DropZone[拖拽上传区域]
 Progress[进度显示]
@@ -61,7 +61,8 @@ Error[错误处理]
 Validation[验证面板]
 Streaming[流式输出]
 EditorTabs[编辑器标签页]
-End
+PostProcessor[剧本文本后处理器]
+END
 JS --> Upload
 JS --> Conversion
 JS --> Editor
@@ -73,18 +74,19 @@ Conversion --> Error
 Conversion --> Validation
 Conversion --> Streaming
 Editor --> EditorTabs
+Editor --> PostProcessor
 ```
 
 **图表来源**
-- [upload.js:1-152](file://app/static/js/upload.js#L1-L152)
+- [upload.js:1-160](file://app/static/js/upload.js#L1-L160)
 - [conversion.js:1-230](file://app/static/js/conversion.js#L1-L230)
-- [editor.js:1-371](file://app/static/js/editor.js#L1-L371)
+- [editor.js:1-511](file://app/static/js/editor.js#L1-L511)
 - [samples.js:1-226](file://app/static/js/samples.js#L1-L226)
 
 **章节来源**
-- [upload.js:1-152](file://app/static/js/upload.js#L1-L152)
+- [upload.js:1-160](file://app/static/js/upload.js#L1-L160)
 - [conversion.js:1-230](file://app/static/js/conversion.js#L1-L230)
-- [editor.js:1-371](file://app/static/js/editor.js#L1-L371)
+- [editor.js:1-511](file://app/static/js/editor.js#L1-L511)
 - [samples.js:1-226](file://app/static/js/samples.js#L1-L226)
 
 ## 核心组件
@@ -94,12 +96,13 @@ Editor --> EditorTabs
 文件上传模块是整个系统的入口点，负责处理用户文件选择、拖拽上传和文件验证。该模块实现了完整的文件上传生命周期管理，包括文件类型验证、大小限制检查和上传进度反馈。
 
 主要功能特性：
-- 支持多种文件格式：TXT、MD、DOCX、PDF
+- 支持多种文件格式：TXT、MD、MARKDOWN、DOCX、PDF
 - 拖拽上传和点击选择两种文件选择方式
 - 实时文件信息显示和验证
 - API密钥安全输入和切换显示
 - 异步上传和转换启动
 - **新增**：状态重置功能，支持转换完成后恢复按钮状态
+- **新增**：本地存储API密钥缓存机制
 
 ### 转换流程控制模块 (conversion.js)
 
@@ -114,6 +117,7 @@ Editor --> EditorTabs
 - 结果展示和下载链接生成
 - **新增**：验证问题面板，显示详细的验证结果
 - **新增**：状态重置功能，支持转换完成后的状态恢复
+- **新增**：流式输出缓冲区管理
 
 ### 编辑器模块 (editor.js)
 
@@ -125,6 +129,9 @@ Editor --> EditorTabs
 - **新增**：正式剧本生成，支持Markdown渲染和编辑
 - **新增**：标签页管理，支持YAML编辑、AI建议和剧本预览
 - **新增**：流式输出处理，支持实时内容渲染
+- **新增**：剧本文本后处理器，专门处理LLM输出格式问题
+- **新增**：Markdown渲染优化，支持更好的显示效果
+- **新增**：终端风格界面，提供更好的用户体验
 
 ### 样例管理模块 (samples.js)
 
@@ -140,7 +147,7 @@ Editor --> EditorTabs
 **章节来源**
 - [upload.js:15-79](file://app/static/js/upload.js#L15-L79)
 - [conversion.js:18-88](file://app/static/js/conversion.js#L18-L88)
-- [editor.js:1-371](file://app/static/js/editor.js#L1-L371)
+- [editor.js:1-511](file://app/static/js/editor.js#L1-L511)
 - [samples.js:1-226](file://app/static/js/samples.js#L1-L226)
 
 ## 架构概览
@@ -154,6 +161,7 @@ participant Upload as 上传模块
 participant Conversion as 转换模块
 participant SSE as Server-Sent Events
 participant Editor as 编辑器模块
+participant PostProcessor as 剧本文本后处理器
 participant Backend as 后端服务
 User->>Upload : 选择或拖拽文件
 Upload->>Upload : 验证文件类型和大小
@@ -166,12 +174,15 @@ Conversion->>SSE : 建立SSE连接
 SSE-->>Conversion : 实时状态更新
 Conversion-->>User : 显示进度和状态
 Conversion->>Editor : 转换完成
+Editor->>PostProcessor : 处理剧本文本
+PostProcessor-->>Editor : 返回格式化内容
 Editor-->>User : 显示编辑器界面
 ```
 
 **图表来源**
 - [upload.js:96-150](file://app/static/js/upload.js#L96-L150)
 - [conversion.js:50-93](file://app/static/js/conversion.js#L50-L93)
+- [editor.js:97-186](file://app/static/js/editor.js#L97-L186)
 
 ## 详细组件分析
 
@@ -184,7 +195,8 @@ Editor-->>User : 显示编辑器界面
 ```mermaid
 flowchart TD
 Start([页面加载]) --> Init["初始化DOM元素<br/>- dropZone<br/>- fileInput<br/>- fileInfo<br/>- convertBtn"]
-Init --> Ready["等待用户操作"]
+Init --> LoadAPIKey["加载本地存储的API密钥"]
+LoadAPIKey --> Ready["等待用户操作"]
 Ready --> Click["用户点击拖拽区域"]
 Click --> Browse["触发文件选择对话框"]
 Browse --> Select["用户选择文件"]
@@ -246,7 +258,7 @@ ShowAlert --> End([结束])
 - [upload.js:103-150](file://app/static/js/upload.js#L103-L150)
 
 **章节来源**
-- [upload.js:1-152](file://app/static/js/upload.js#L1-L152)
+- [upload.js:1-160](file://app/static/js/upload.js#L1-L160)
 
 ### 转换流程控制组件
 
@@ -412,6 +424,33 @@ SaveContent --> DownloadContent["下载剧本"]
 **图表来源**
 - [editor.js:248-352](file://app/static/js/editor.js#L248-L352)
 
+#### 剧本文本后处理器
+
+**新增** 模块的核心创新功能，专门处理LLM输出的格式问题：
+
+```mermaid
+flowchart TD
+Input["原始剧本文本"] --> Step1["步骤1：清理行首尾空白"]
+Step1 --> Step2["步骤2：折叠多余空行"]
+Step2 --> Step3["步骤3：添加Markdown标记"]
+Step3 --> CheckFormat{"已有Markdown格式?"}
+CheckFormat --> |是| Preserve["保留现有标记"]
+CheckFormat --> |否| ProcessLines["处理纯文本行"]
+ProcessLines --> ActHeading["处理剧幕标题"]
+ActHeading --> SceneHeading["处理场景标题"]
+SceneHeading --> Transition["处理转场标记"]
+Transition --> CharacterName["处理角色名称"]
+CharacterName --> Parenthetical["处理括号提示"]
+Parenthetical --> Default["默认处理"]
+Default --> Step4["步骤4：最终清理"]
+Step4 --> Output["格式化后的文本"]
+Preserve --> Step4
+Output --> End([完成])
+```
+
+**图表来源**
+- [editor.js:97-186](file://app/static/js/editor.js#L97-L186)
+
 #### 交互功能
 
 编辑器模块提供了多种用户交互功能：
@@ -422,9 +461,11 @@ SaveContent --> DownloadContent["下载剧本"]
 4. **内容保存**：自动保存和手动保存功能
 5. **下载功能**：直接下载YAML和剧本内容
 6. **错误处理**：网络错误时的降级显示
+7. **终端风格界面**：提供更好的用户体验
+8. **Markdown渲染优化**：支持更好的显示效果
 
 **章节来源**
-- [editor.js:1-371](file://app/static/js/editor.js#L1-L371)
+- [editor.js:1-511](file://app/static/js/editor.js#L1-L511)
 
 ### 样例管理组件
 
@@ -502,13 +543,13 @@ Fetch[Fetch API]
 Clipboard[Clipboard API]
 marked[marked.js]
 SSE[Server-Sent Events]
-end
+END
 subgraph "内部模块"
 Upload[upload.js]
 Conversion[conversion.js]
 Editor[editor.js]
 Samples[samples.js]
-end
+END
 Upload --> Fetch
 Upload --> Conversion
 Conversion --> SSE
@@ -549,9 +590,9 @@ Conversion --> Upload
 6. **缓存机制**：localStorage用于API密钥缓存
 
 **章节来源**
-- [upload.js:1-152](file://app/static/js/upload.js#L1-L152)
+- [upload.js:1-160](file://app/static/js/upload.js#L1-L160)
 - [conversion.js:1-230](file://app/static/js/conversion.js#L1-L230)
-- [editor.js:1-371](file://app/static/js/editor.js#L1-L371)
+- [editor.js:1-511](file://app/static/js/editor.js#L1-L511)
 - [samples.js:1-226](file://app/static/js/samples.js#L1-L226)
 
 ## 性能考虑
@@ -612,6 +653,11 @@ Conversion --> Upload
    - 确认作业ID有效
    - 查看浏览器控制台错误
 
+5. **剧本文本后处理器失效**
+   - 检查后处理器函数是否正确加载
+   - 验证输入文本格式
+   - 查看浏览器控制台错误
+
 ### 调试技巧
 
 1. **浏览器开发者工具**：使用Network标签监控API调用
@@ -637,5 +683,8 @@ Conversion --> Upload
 - **兼容性考虑**：平衡新特性和浏览器兼容性
 - **实时性**：基于SSE的实时进度跟踪和流式输出
 - **完整性**：从上传到编辑的完整工作流程
+- **创新功能**：新增的剧本文本后处理器显著提升了输出质量
 
-通过这些设计和实现，系统不仅满足了功能需求，还为后续的功能扩展和维护奠定了良好的基础。新增的验证问题面板、流式输出显示和状态重置功能进一步提升了用户体验和系统的实用性。
+通过这些设计和实现，系统不仅满足了功能需求，还为后续的功能扩展和维护奠定了良好的基础。新增的验证问题面板、流式输出显示、状态重置功能和剧本文本后处理器进一步提升了用户体验和系统的实用性。
+
+**最新更新**：剧本文本后处理器的引入是本次更新的核心亮点，它专门解决了LLM输出格式问题，通过智能识别和添加Markdown标记，显著改善了剧本内容的显示效果，为用户提供了更专业、更易读的剧本编辑体验。

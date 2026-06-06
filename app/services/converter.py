@@ -251,8 +251,7 @@ def _create_fallback_act(chapter: Chapter, context: ConversionContext) -> Act:
         context.running_scene_number += 1
         scene_num = context.running_scene_number
 
-        # Use first short sentence or chapter title as location hint
-        first_line = group[0][:50]
+        # Use chapter title as location hint
         location = f"{chapter_title} - 场景{i + 1}" if len(scene_groups) > 1 else chapter_title
 
         elements = []

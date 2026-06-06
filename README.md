@@ -60,7 +60,9 @@ source .venv/bin/activate
 .venv\Scripts\activate.bat
 ```
 
-# 安装所有依赖（含开发依赖）
+激活虚拟环境后，安装所有依赖（含开发依赖）：
+
+```bash
 pip install -e ".[dev]"
 ```
 
@@ -75,7 +77,7 @@ cp .env.example .env
 ```env
 DEEPSEEK_API_KEY=sk-your-key-here
 DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_MODEL=deepseek-v4-flash
 MAX_UPLOAD_SIZE_MB=50
 DATA_DIR=./data
 ```
@@ -128,6 +130,8 @@ novel/
 │   └── DEPLOYMENT.md           # 部署指南
 └── tests/                      # 55 个单元/集成测试
 ```
+
+> 📚 **项目知识库（RepoWiki）**：在 `.qoder/repowiki/` 目录下提供了丰富的项目文档，涵盖架构设计、API 参考、LLM 集成、数据模型、部署运维等多个主题。这些文档既可作为 AI Agent 开发时的上下文参考，也适合人类读者深入了解项目细节。
 
 ## 处理流水线
 
@@ -190,7 +194,7 @@ ruff check app/ tests/ --fix
 |---------|-------|------|
 | `DEEPSEEK_API_KEY` | (必填) | DeepSeek API 密钥 |
 | `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | API 基础 URL |
-| `DEEPSEEK_MODEL` | `deepseek-chat` | 使用的模型 |
+| `DEEPSEEK_MODEL` | `deepseek-v4-flash` | 使用的模型 |
 | `MAX_UPLOAD_SIZE_MB` | `50` | 最大上传文件大小 (MB) |
 | `DATA_DIR` | `./data` | 运行时数据目录 |
 
