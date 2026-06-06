@@ -1,7 +1,6 @@
 """Tests for the file parser service."""
 
 import pytest
-from pathlib import Path
 
 from app.services.file_parser import (
     extract_text,

@@ -39,6 +39,18 @@ cd novel
 python3 -m venv .venv
 source .venv/bin/activate
 
+在 Windows PowerShell 中，激活虚拟环境的命令是：
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+如果是 CMD 的话：
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
 # 安装所有依赖（含开发依赖）
 pip install -e ".[dev]"
 ```

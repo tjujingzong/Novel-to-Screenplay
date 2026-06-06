@@ -1,17 +1,13 @@
 """Tests for the assembler service."""
 
-import pytest
 
 from app.models.screenplay import (
     Act,
     ActionElement,
-    Character,
     DialogueElement,
     Metadata,
     Scene,
     SceneHeading,
-    Screenplay,
-    Structure,
 )
 from app.services.assembler import assemble_screenplay
 from app.services.converter import ConversionResult

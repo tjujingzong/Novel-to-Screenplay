@@ -1,17 +1,8 @@
 """Tests for the validator service."""
 
-import pytest
 
 from app.models.screenplay import (
-    Act,
-    ActionElement,
-    Character,
     DialogueElement,
-    Metadata,
-    Scene,
-    SceneHeading,
-    Screenplay,
-    Structure,
 )
 from app.services.validator import validate_screenplay
 

@@ -1,6 +1,5 @@
 """Tests for the Pydantic screenplay models."""
 
-import pytest
 
 from app.models.screenplay import (
     ActionElement,

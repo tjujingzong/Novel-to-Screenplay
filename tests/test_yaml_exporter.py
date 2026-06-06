@@ -1,6 +1,5 @@
 """Tests for the YAML exporter service."""
 
-import pytest
 
 from ruamel.yaml import YAML
 

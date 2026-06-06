@@ -1,6 +1,5 @@
 """Tests for the chapter splitter service."""
 
-import pytest
 
 from app.services.chapter_splitter import split_chapters, Chapter
 

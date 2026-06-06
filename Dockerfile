@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir .
 COPY . .
 
 # 创建数据目录
-RUN mkdir -p /data/uploads /data/outputs
+RUN mkdir -p /data/uploads /data/outputs /data/samples
 
 ENV DATA_DIR=/data
 ENV PYTHONUNBUFFERED=1

@@ -9,7 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, UploadFi
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
 
 from app.config import get_settings
-from app.dependencies import templates
+from app.dependencies import BASE_DIR, templates
 from app.models.enums import ConversionStage
 from app.models.requests import (
     ConversionStatus,
@@ -184,7 +184,7 @@ async def get_status_sse(job_id: str):
                 last_chunk_count = len(chunks)
 
             if status.stage in (ConversionStage.COMPLETE.value, ConversionStage.ERROR.value):
-                yield f"event: done\ndata: {{}}\n\n"
+                yield "event: done\ndata: {}\n\n"
                 break
 
             await asyncio.sleep(0.5)
@@ -302,7 +302,7 @@ async def regenerate_yaml(job_id: str, body: RegenerateRequest):
             output_path = settings.output_dir / f"{job_id}.yaml"
             output_path.write_text(new_yaml, encoding="utf-8")
 
-            yield f"event: done\ndata: {{}}\n\n"
+            yield "event: done\ndata: {}\n\n"
 
         except Exception as e:
             logger.exception("Regeneration failed for job %s", job_id)
@@ -358,7 +358,7 @@ async def convert_to_screenplay(job_id: str, body: RegenerateRequest):
             output_path = settings.output_dir / f"{job_id}.screenplay.txt"
             output_path.write_text(screenplay_text, encoding="utf-8")
 
-            yield f"event: done\ndata: {{}}\n\n"
+            yield "event: done\ndata: {}\n\n"
 
         except Exception as e:
             logger.exception("Screenplay conversion failed for job %s", job_id)
@@ -429,8 +429,9 @@ async def download_screenplay(job_id: str):
 @router.get("/api/samples")
 async def list_samples():
     """List available sample novels."""
-    settings = get_settings()
-    samples_dir = settings.data_dir / "samples"
+    # Samples are project-bundled static assets, locate them relative to project root
+    # rather than data_dir (which points to runtime user data in production)
+    samples_dir = BASE_DIR.parent / "data" / "samples"
 
     if not samples_dir.exists():
         return {"samples": []}
@@ -465,8 +466,7 @@ async def list_samples():
 @router.get("/api/samples/{sample_id}")
 async def get_sample(sample_id: str):
     """Get the content of a specific sample."""
-    settings = get_settings()
-    samples_dir = settings.data_dir / "samples"
+    samples_dir = BASE_DIR.parent / "data" / "samples"
 
     # Find the file
     for ext in (".txt", ".md"):
